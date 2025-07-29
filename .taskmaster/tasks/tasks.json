@@ -15,21 +15,101 @@
       {
         "id": 2,
         "title": "Configure Infrastructure as Code",
-        "description": "Define and provision AWS infrastructure components using IaC",
-        "details": "• Use Terraform or CloudFormation in infra/  \n• Define AWS resources: ECS cluster on Fargate, RDS PostgreSQL instance, S3 buckets for artifacts, Redis (ElastiCache), IAM roles and policies  \n• Configure Terraform remote state and variables for staging and production",
-        "testStrategy": "• Run `terraform plan` to validate configuration  \n• Apply in a staging account and verify resources are created  \n• Destroy and ensure resources are cleaned up without errors",
-        "priority": "high",
+        "description": "Define and provision GCP infrastructure components using Terraform",
+        "status": "pending",
         "dependencies": [
           1
         ],
-        "status": "pending",
+        "priority": "high",
+        "details": "• Use Terraform in infra/terraform/\n• Define GCP resources: VPC network, Cloud SQL (PostgreSQL), Cloud Run services, Cloud Storage buckets for artifacts, Memorystore Redis, IAM service accounts and roles\n• Configure Terraform remote state in GCS with versioning and IAM locking for staging and production",
+        "testStrategy": "• Run `terraform plan` to validate configuration\n• Apply in a staging GCP project and verify resources are created via gcloud console\n• Destroy and ensure resources are cleaned up without errors",
         "subtasks": [
+          {
+            "id": 3,
+            "title": "Configure Cloud Run Services",
+            "description": "Define and provision GCP Cloud Run services for the application workloads",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for cloud_run under infra/terraform/modules/cloud-run.\n2. Define google_cloud_run_service resources with container image, memory, CPU, and environment variables.\n3. Configure VPC connector, ingress and egress settings, and IAM roles for service invocation.\n4. Set up Google Cloud Logging and Monitoring integration for logs and metrics.",
+            "testStrategy": "• Run `terraform plan` and apply for staging; verify services are deployed and reachable\n• Deploy test revision and confirm autoscaling and health checks"
+          },
+          {
+            "id": 4,
+            "title": "Provision Cloud SQL PostgreSQL Instance",
+            "description": "Define and deploy a GCP Cloud SQL PostgreSQL instance with private networking and backups",
+            "status": "done",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for cloud_sql under infra/terraform/modules/cloud-sql.\n2. Define google_sql_database_instance with PostgreSQL engine, version, instance tier, storage, and backup configuration.\n3. Configure private IP networking via VPC peering and enable Service Networking API.\n4. Set up IAM roles for the Cloud SQL service account and enable point-in-time recovery.\n<info added on 2025-07-29T10:32:36.313Z>\nSuccessfully deployed Cloud SQL PostgreSQL instance testpilot-ai-postgres-staging with private VPC peering, database “testpilot,” users “testpilot_user” and “testpilot_user_app,” and a service account assigned appropriate IAM roles.  \nBackup configuration updated: point-in-time recovery enabled, daily backups at 02:00, 3-day retention for staging (7 days for production).  \nSecurity and networking enforced: private-IP only, SSL encryption required, VPC firewall rules for Cloud Run access, IAM database authentication enabled.  \nApplied technical fixes: corrected backup transaction log retention, replaced deprecated require_ssl with ssl_mode, removed unsupported shared_preload_libraries flag, and enabled Service Networking API for private connections.  \nNext steps: validate connectivity from Cloud Run services, configure application code to use the Cloud SQL connector, and set up database monitoring and alerting.\n</info added on 2025-07-29T10:32:36.313Z>",
+            "testStrategy": "• Run `terraform plan` and apply; verify instance in Cloud Console\n• Test connectivity from Cloud Run; verify backups and recovery"
+          },
+          {
+            "id": 5,
+            "title": "Create Cloud Storage Buckets",
+            "description": "Set up GCS buckets for application artifacts, logs, and static content",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for storage under infra/terraform/modules/cloud-storage.\n2. Define google_storage_bucket resources for artifacts, logs, and backups with versioning and encryption.\n3. Configure bucket lifecycle rules and IAM policies for least-privilege access.\n4. Enable uniform bucket-level access and audit logging.",
+            "testStrategy": "• Run `terraform plan` and apply; verify buckets in GCS console\n• Test object uploads and access permissions"
+          },
+          {
+            "id": 6,
+            "title": "Deploy Memorystore Redis Instance",
+            "description": "Define and provision a GCP Memorystore Redis instance for caching and session storage",
+            "status": "pending",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for memorystore under infra/terraform/modules/redis.\n2. Define google_redis_instance with tier, memory size, and region.\n3. Configure authorized network and IAM permissions for the service account.\n4. Test connectivity from Cloud Run and verify performance metrics.",
+            "testStrategy": "• Run `terraform plan` and apply; verify Redis in Console and endpoints\n• Perform read/write tests and measure latency"
+          },
+          {
+            "id": 7,
+            "title": "Update Application Code for GCP SDKs",
+            "description": "Refactor application code to use GCP client libraries for Cloud SQL, Cloud Storage, and Cloud Run",
+            "status": "pending",
+            "dependencies": [
+              3,
+              4,
+              5,
+              6
+            ],
+            "details": "1. Replace AWS SDK calls with Google Cloud client libraries (google-cloud-storage, google-cloud-sqlconnector).\n2. Update database connection logic to use the Cloud SQL connector.\n3. Modify storage upload/download code to use GCS APIs.\n4. Adjust environment variables and secrets management for GCP.",
+            "testStrategy": "• Run unit and integration tests to ensure connectivity to GCP services\n• Perform end-to-end test of application workflows"
+          },
+          {
+            "id": 8,
+            "title": "Migrate CI/CD Pipeline to Cloud Build",
+            "description": "Implement CI/CD pipeline using Google Cloud Build for infrastructure and application deployments",
+            "status": "pending",
+            "dependencies": [
+              7
+            ],
+            "details": "1. Create cloudbuild.yaml with steps to plan and apply Terraform changes.\n2. Add steps to build and deploy application containers to Cloud Run.\n3. Configure triggers based on repository branches for staging and production.\n4. Set up IAM permissions for the Cloud Build service account.",
+            "testStrategy": "• Push commit to trigger Cloud Build; verify Terraform apply and service deployment\n• Roll back changes and ensure pipeline handles failures gracefully"
+          },
+          {
+            "id": 9,
+            "title": "Configure and Deploy Production Environment",
+            "description": "Provision and deploy all infrastructure and application components in the production GCP project",
+            "status": "pending",
+            "dependencies": [
+              8
+            ],
+            "details": "1. Set up production GCP project, billing, and organization policies.\n2. Configure Terraform workspaces or separate envs for production under infra/terraform/envs/production.\n3. Apply Terraform for all modules to provision production resources.\n4. Deploy application to production Cloud Run services and validate functionality.",
+            "testStrategy": "• Perform smoke tests on production endpoints\n• Verify monitoring, logging, backups, and disaster recovery processes"
+          },
           {
             "id": 1,
             "title": "Initialize IaC Repository, Modules, and Remote State Configuration",
             "description": "Set up the Infrastructure as Code (IaC) codebase with Terraform modules and configure remote state backends for both staging and production environments.",
             "dependencies": [],
-            "details": "1. Create a new Git repository and define directory structure (modules/, envs/staging/, envs/production/).\n2. Scaffold Terraform modules directory with reusable module templates.\n3. Write backend.tf to configure S3 remote state with DynamoDB state locking for staging and production.\n4. Initialize Terraform in each environment and verify remote state buckets and locks.\n<info added on 2025-07-29T06:56:46.542Z>\nDirectory structure updated to include infra/terraform/modules/, infra/terraform/envs/staging/, infra/terraform/envs/production/ and infra/terraform/scripts/ for helper scripts  \nCreated reusable module directories for vpc, ecs-cluster, rds, elasticache, s3-buckets and iam-roles  \nConfigured backend.tf with S3 remote state and DynamoDB state locking, with separate staging and production backends and provider default tags  \nImplemented full VPC module (public/private subnets, Internet Gateway, NAT Gateway, route tables) with variables.tf and outputs.tf  \nDeveloped init-backend.sh to automatically provision S3 buckets and DynamoDB tables (versioning, encryption, public access blocking) for both environments  \nAdded comprehensive README.md with setup instructions, troubleshooting guide and best practices  \nNext step: run init-backend.sh to provision the required remote state infrastructure.\n</info added on 2025-07-29T06:56:46.542Z>",
+            "details": "1. Create a new Git repository and define directory structure (modules/, envs/staging/, envs/production/).\n2. Scaffold Terraform modules directory with reusable module templates.\n3. Write backend.tf to configure S3 remote state with DynamoDB state locking for staging and production.\n4. Initialize Terraform in each environment and verify remote state buckets and locks.\n<info added on 2025-07-29T06:56:46.542Z>\nDirectory structure updated to include infra/terraform/modules/, infra/terraform/envs/staging/, infra/terraform/envs/production/ and infra/terraform/scripts/ for helper scripts  \nCreated reusable module directories for vpc, ecs-cluster, rds, elasticache, s3-buckets and iam-roles  \nConfigured backend.tf with S3 remote state and DynamoDB state locking, with separate staging and production backends and provider default tags  \nImplemented full VPC module (public/private subnets, Internet Gateway, NAT Gateway, route tables) with variables.tf and outputs.tf  \nDeveloped init-backend.sh to automatically provision S3 buckets and DynamoDB tables (versioning, encryption, public access blocking) for both environments  \nAdded comprehensive README.md with setup instructions, troubleshooting guide and best practices  \nNext step: run init-backend.sh to provision the required remote state infrastructure.\n</info added on 2025-07-29T06:56:46.542Z>\n<info added on 2025-07-29T09:09:27.965Z>\nDecision made to switch to GCP for existing Google account access, ~35% cost savings, more generous free tier (2M Cloud Run requests/month), simpler Cloud Run deployments and tighter service integration  \nAdded Terraform modules under infra/terraform/modules/gcp for VPC (private subnets, Cloud NAT, firewall, VPC connector), Cloud SQL (PostgreSQL private networking, IAM auth), Cloud Run (serverless containers with autoscaling), Memorystore (Redis), Cloud Storage and IAM service accounts  \nConfigured backend.tf to use GCS remote state with versioned buckets and IAM locking, and created init-backend-gcp.sh to provision storage buckets, service accounts and IAM roles  \nCompleted full staging environment Terraform configuration targeting GCP  \nIncluded AWS-to-GCP migration guide detailing module mappings and code changes  \nAdded cost comparison in README: AWS $140–250/month vs GCP $93–155/month (~35% savings)  \nNext steps: set up GCP project and billing, initialize backend infrastructure, deploy staging, finalize remaining modules, update app code for GCP SDKs, migrate CI/CD to Cloud Build\n</info added on 2025-07-29T09:09:27.965Z>\n<info added on 2025-07-29T10:30:46.246Z>\nGCP infrastructure successfully deployed for the staging environment\n\nMajor accomplishments\n- Switched from AWS to GCP achieving ~35% cost savings and tighter service integration\n- Completed Terraform modules for VPC, Cloud SQL (PostgreSQL), Cloud Run, Memorystore, Cloud Storage, and IAM\n- Deployed staging environment infrastructure with 16+ resources\n- Configured GCS remote state bucket with IAM permissions and state locking\n\nProvisioned resources\n1. VPC Network (testpilot-ai-vpc-staging): custom VPC with private subnets (10.0.1.0/24, 10.0.2.0/24), Cloud Router, NAT Gateway, private services connection, VPC Connector  \n2. Cloud SQL PostgreSQL instance (testpilot-ai-postgres-staging): PostgreSQL 15 with private networking, testpilot database and users, service account IAM roles, backups with point-in-time recovery  \n3. Firewall rules: internal subnet communication; Cloud Run to Cloud SQL (port 5432); Cloud Run to Cloud Storage  \n4. Remote state infrastructure: GCS bucket testpilot-ai-terraform-state-staging-testpilotai-467409 with versioning, proper IAM permissions, and state locking  \n\nTechnical fixes\n- Adjusted Cloud SQL backup configuration for transaction log retention  \n- Resolved VPC Connector naming inconsistencies  \n- Updated deprecated require_ssl to ssl_mode  \n- Removed unsupported shared_preload_libraries flag  \n- Enabled Service Networking API for private Cloud SQL  \n\nNext steps\n- Deploy remaining modules (Cloud Run, Memorystore, Cloud Storage)  \n- Update application code to use GCP SDKs  \n- Migrate CI/CD pipeline to Cloud Build  \n- Configure and provision the production environment\n</info added on 2025-07-29T10:30:46.246Z>",
             "status": "done",
             "testStrategy": ""
           },
@@ -40,52 +120,8 @@
             "dependencies": [
               1
             ],
-            "details": "1. Write Terraform code for aws_iam_role and aws_iam_policy resources.\n2. Define inline and managed policies granting least-privilege access for ECS tasks, RDS, S3, and ElastiCache.\n3. Attach policies to roles and create iam_role_policy_attachment resources.\n4. Test roles using Terraform plan/apply in a sandbox environment.\n<info added on 2025-07-29T06:58:49.531Z>\n5. Created ECS Task Execution Role, ECS Task Role, and RDS Monitoring Role with appropriate assume_role_policy documents  \n6. Defined and attached least-privilege policies: S3 Access Policy (project-specific buckets), RDS Access Policy (IAM auth restricted to VPC), ElastiCache Access Policy (resource discovery), and CloudWatch Logs Policy (ECS log groups)  \n7. Structured module files: main.tf for IAM resources and attachments, variables.tf for inputs (project_name, environment, vpc_id, rds_resource_id), outputs.tf exporting role ARNs and policy ARNs, and README.md with usage examples and security considerations  \n8. Module is integration-ready, providing all required IAM roles and policy ARNs for seamless integration with VPC and RDS modules\n</info added on 2025-07-29T06:58:49.531Z>",
+            "details": "1. Write Terraform code for aws_iam_role and aws_iam_policy resources.\n2. Define inline and managed policies granting least-privilege access for ECS tasks, RDS, S3, and ElastiCache.\n3. Attach policies to roles and create iam_role_policy_attachment resources.\n4. Test roles using Terraform plan/apply in a sandbox environment.\n<info added on 2025-07-29T06:58:49.531Z>\n5. Created ECS Task Execution Role, ECS Task Role, and RDS Monitoring Role with appropriate assume_role_policy documents  \n6. Defined and attached least-privilege policies: S3 Access Policy (project-specific buckets), RDS Access Policy (IAM auth restricted to VPC), ElastiCache Access Policy (resource discovery), and CloudWatch Logs Policy (ECS log groups)  \n7. Structured module files: main.tf for IAM resources and attachments, variables.tf for inputs (project_name, environment, vpc_id, rds_resource_id), outputs.tf exporting role ARNs and policy ARNs, and README.md with usage examples and security considerations  \n8. Module is integration-ready, providing all required IAM roles and policy ARNs for seamless integration with VPC and RDS modules\n</info added on 2025-07-29T06:58:49.531Z>\n<info added on 2025-07-29T10:32:16.174Z>\n9. Migrated from AWS IAM to GCP by replacing AWS IAM roles and policies with Terraform-managed GCP service accounts and IAM roles  \n10. Created Cloud SQL service account with database access permissions and enabled IAM authentication over private VPC connections  \n11. Provisioned Cloud Run service account with least-privilege access to Cloud SQL and Cloud Storage and configured corresponding IAM role bindings  \n12. Defined IAM roles for secure service-to-service communication between Cloud Run services and Cloud SQL  \n13. Implemented private networking authentication for Cloud SQL using IAM and VPC peering  \n14. Updated Terraform outputs to export GCP service account emails and IAM role IDs for downstream modules  \n15. Documented GCP IAM model differences and added migration guidance in the README  \n16. Next steps: configure remaining GCP resources (Cloud Run, Memorystore, Cloud Storage) and update application code to use GCP service account authentication\n</info added on 2025-07-29T10:32:16.174Z>",
             "status": "done",
-            "testStrategy": ""
-          },
-          {
-            "id": 3,
-            "title": "Configure ECS Cluster on Fargate",
-            "description": "Define and provision an AWS ECS cluster using Fargate, including task definitions, services, and networking.",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Create a Terraform module for ecs-cluster with aws_ecs_cluster resource.\n2. Define aws_ecs_task_definition for container images, CPU/memory, and environment variables.\n3. Set up aws_ecs_service with desired count, health checks, and load balancer integration.\n4. Configure VPC, subnets, security groups, and IAM task roles.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 4,
-            "title": "Provision RDS PostgreSQL Instance",
-            "description": "Define and deploy an RDS PostgreSQL instance with appropriate networking, security, and parameter configurations.",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Create a Terraform module for rds with aws_db_subnet_group and aws_db_parameter_group.\n2. Define aws_db_instance resource with engine, version, instance class, and storage settings.\n3. Configure VPC security group rules to allow access only from ECS tasks.\n4. Enable encryption, backups, and monitoring parameters.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 5,
-            "title": "Create S3 Buckets",
-            "description": "Set up S3 buckets for application assets, logs, and any static content storage.",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Write Terraform code for multiple aws_s3_bucket resources (e.g., assets, logs, backups).\n2. Configure bucket versioning, encryption (SSE-S3 or SSE-KMS), and lifecycle rules.\n3. Define bucket policies for cross-account or public access restrictions.\n4. Verify bucket creation and access permissions in each environment.",
-            "status": "pending",
-            "testStrategy": ""
-          },
-          {
-            "id": 6,
-            "title": "Deploy Redis ElastiCache Cluster",
-            "description": "Define and provision a Redis ElastiCache cluster or replication group for caching and session storage.",
-            "dependencies": [
-              2
-            ],
-            "details": "1. Create a Terraform module for elasticache with aws_elasticache_subnet_group and aws_elasticache_parameter_group.\n2. Define aws_elasticache_replication_group resource with engine version, node type, and replica count.\n3. Set up security groups to restrict access to application components.\n4. Test connectivity and performance parameters.",
-            "status": "pending",
             "testStrategy": ""
           }
         ]
@@ -684,7 +720,7 @@
     ],
     "metadata": {
       "created": "2025-07-29T05:15:47.797Z",
-      "updated": "2025-07-29T06:58:52.031Z",
+      "updated": "2025-07-29T10:32:39.331Z",
       "description": "Tasks for master context"
     }
   }
