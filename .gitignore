@@ -104,4 +104,4 @@ ehthumbs.db
 Thumbs.db 
 
 # Terraform
-terraform-admin-key.json
+infra/gcp/terraform/terraform-admin-key.json
