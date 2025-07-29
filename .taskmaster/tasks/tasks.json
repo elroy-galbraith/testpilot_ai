@@ -1,0 +1,691 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Initialize Monorepo and CI/CD Pipeline",
+        "description": "Setup the project repository structure and configure CI/CD with GitHub Actions",
+        "details": "• Create a monorepo with folders: frontend/, backend/, infra/  \n• Add Dockerfile templates in each service  \n• Configure GitHub Actions workflows for linting (ESLint, Flake8), unit tests, and Docker build/push  \n• Add repository README with development guidelines",
+        "testStrategy": "• Commit a change and verify GitHub Actions pipeline runs successfully  \n• Ensure lint jobs pass on clean code  \n• Run dummy tests to confirm test runner integration",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Configure Infrastructure as Code",
+        "description": "Define and provision AWS infrastructure components using IaC",
+        "details": "• Use Terraform or CloudFormation in infra/  \n• Define AWS resources: ECS cluster on Fargate, RDS PostgreSQL instance, S3 buckets for artifacts, Redis (ElastiCache), IAM roles and policies  \n• Configure Terraform remote state and variables for staging and production",
+        "testStrategy": "• Run `terraform plan` to validate configuration  \n• Apply in a staging account and verify resources are created  \n• Destroy and ensure resources are cleaned up without errors",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Initialize IaC Repository, Modules, and Remote State Configuration",
+            "description": "Set up the Infrastructure as Code (IaC) codebase with Terraform modules and configure remote state backends for both staging and production environments.",
+            "dependencies": [],
+            "details": "1. Create a new Git repository and define directory structure (modules/, envs/staging/, envs/production/).\n2. Scaffold Terraform modules directory with reusable module templates.\n3. Write backend.tf to configure S3 remote state with DynamoDB state locking for staging and production.\n4. Initialize Terraform in each environment and verify remote state buckets and locks.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Define IAM Roles and Policies",
+            "description": "Create and manage IAM roles, policies, and service accounts needed by ECS tasks and other AWS services.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Write Terraform code for aws_iam_role and aws_iam_policy resources.\n2. Define inline and managed policies granting least-privilege access for ECS tasks, RDS, S3, and ElastiCache.\n3. Attach policies to roles and create iam_role_policy_attachment resources.\n4. Test roles using Terraform plan/apply in a sandbox environment.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure ECS Cluster on Fargate",
+            "description": "Define and provision an AWS ECS cluster using Fargate, including task definitions, services, and networking.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for ecs-cluster with aws_ecs_cluster resource.\n2. Define aws_ecs_task_definition for container images, CPU/memory, and environment variables.\n3. Set up aws_ecs_service with desired count, health checks, and load balancer integration.\n4. Configure VPC, subnets, security groups, and IAM task roles.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Provision RDS PostgreSQL Instance",
+            "description": "Define and deploy an RDS PostgreSQL instance with appropriate networking, security, and parameter configurations.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for rds with aws_db_subnet_group and aws_db_parameter_group.\n2. Define aws_db_instance resource with engine, version, instance class, and storage settings.\n3. Configure VPC security group rules to allow access only from ECS tasks.\n4. Enable encryption, backups, and monitoring parameters.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Create S3 Buckets",
+            "description": "Set up S3 buckets for application assets, logs, and any static content storage.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Write Terraform code for multiple aws_s3_bucket resources (e.g., assets, logs, backups).\n2. Configure bucket versioning, encryption (SSE-S3 or SSE-KMS), and lifecycle rules.\n3. Define bucket policies for cross-account or public access restrictions.\n4. Verify bucket creation and access permissions in each environment.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Deploy Redis ElastiCache Cluster",
+            "description": "Define and provision a Redis ElastiCache cluster or replication group for caching and session storage.",
+            "dependencies": [
+              2
+            ],
+            "details": "1. Create a Terraform module for elasticache with aws_elasticache_subnet_group and aws_elasticache_parameter_group.\n2. Define aws_elasticache_replication_group resource with engine version, node type, and replica count.\n3. Set up security groups to restrict access to application components.\n4. Test connectivity and performance parameters.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Setup Backend Framework and LLM Integration",
+        "description": "Initialize FastAPI server and integrate LangChain with OpenAI/Claude LLMs",
+        "details": "• scaffold FastAPI project and configure uvicorn server  \n• Install dependencies: fastapi, uvicorn, langchain, openai, anthropic  \n• Create an AgentService class wrapping LangChain chains with prompt templates for test generation  \n• Configure environment variables for API keys and model selection",
+        "testStrategy": "• Unit test AgentService with mocked LLM responses  \n• Integration test FastAPI startup and healthcheck endpoint",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold FastAPI project",
+            "description": "Set up the basic FastAPI project structure.",
+            "dependencies": [],
+            "details": "Create a new project directory, initialize a Git repository, add a main.py file with a FastAPI app instance, and configure uvicorn entrypoint in README.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Install project dependencies",
+            "description": "Install FastAPI, uvicorn, LangChain, OpenAI, and Anthropic SDKs.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use pip or Poetry to install fastapi, uvicorn, langchain, openai, and anthropic. Verify installations by running `python -m uvicorn --version` and importing packages in a REPL.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure environment variables for API keys",
+            "description": "Set up secure loading of OpenAI and Anthropic API keys.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a .env file at project root with OPENAI_API_KEY and ANTHROPIC_API_KEY entries. Use python-dotenv or Pydantic BaseSettings in settings.py to load these variables.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement AgentService class with prompt templates",
+            "description": "Develop the service layer to handle LLM interactions using prompt templates.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "In services/agent_service.py, create AgentService class. Define methods that load templates, fill variables, and call LangChain/OpenAI/Anthropic clients using API keys from settings.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add basic healthcheck endpoints",
+            "description": "Provide endpoints to verify API service availability.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "In main.py or a new router, add GET /healthcheck returning {\"status\":\"ok\"} with HTTP 200. Register the router and test with curl or HTTP client.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Design and Implement Data Models and Persistence Layer",
+        "description": "Define database schemas, caching, and artifact storage integration",
+        "details": "• Use SQLAlchemy and Alembic to define models: TestCase (id, spec, code, status), ExecutionResult (id, test_case_id, status, logs, screenshot_url), UserFeedback (id, test_case_id, feedback)  \n• Configure PostgreSQL connection and run migrations  \n• Setup Redis client for session and prompt caching  \n• Integrate boto3 to upload artifacts to S3",
+        "testStrategy": "• Run migrations and verify tables in PostgreSQL  \n• CRUD unit tests for each model  \n• Test Redis caching behavior  \n• Mock S3 uploads and validate bucket/key usage",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define SQLAlchemy Models for TestCase, ExecutionResult, UserFeedback",
+            "description": "Design and implement SQLAlchemy ORM classes representing TestCase, ExecutionResult, and UserFeedback entities.",
+            "dependencies": [],
+            "details": "- Define Python classes inheriting from Base\n- Specify columns, types, primary keys, foreign key relationships\n- Add indexes and constraints as needed\n- Configure __repr__ and helper methods",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Set Up Alembic Migration Environment",
+            "description": "Initialize and configure Alembic to manage database schema migrations based on SQLAlchemy models.",
+            "dependencies": [
+              1
+            ],
+            "details": "- Install Alembic and create migrations directory\n- Configure alembic.ini and env.py to import metadata\n- Generate initial revision reflecting current models\n- Test upgrade and downgrade commands",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Configure PostgreSQL Connection",
+            "description": "Establish connection settings and session management for PostgreSQL using SQLAlchemy.",
+            "dependencies": [],
+            "details": "- Define database URL via environment variables\n- Create SQLAlchemy engine with pooling options\n- Set up scoped_session or sessionmaker\n- Validate connection and handle retries",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate Redis Client for Caching",
+            "description": "Add Redis support for caching execution results and lookup operations.",
+            "dependencies": [],
+            "details": "- Install redis-py library\n- Configure Redis connection pool and client settings\n- Implement cache get/set utilities\n- Integrate caching layer in relevant data access methods",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Implement S3 Artifact Upload via boto3",
+            "description": "Add support for uploading and downloading test artifacts to/from AWS S3.",
+            "dependencies": [],
+            "details": "- Install boto3 and configure AWS credentials\n- Create S3 client or resource with proper region settings\n- Implement upload, download, and cleanup helper functions\n- Ensure error handling and retry logic",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Write CRUD Unit Tests for Models and Persistence",
+            "description": "Develop unit tests to verify create, read, update, and delete operations on the data models.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "- Use pytest and test database fixtures\n- Configure in-memory or test PostgreSQL instance\n- Write tests for TestCase, ExecutionResult, UserFeedback operations\n- Clean up data between tests",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop CLI Tool for Natural Language Test Generation",
+        "description": "Implement a Python CLI to accept product specs and generate test cases via the agent",
+        "details": "• Use Click or argparse for CLI parsing  \n• Commands: `generate --input spec.md --format english|playwright`  \n• Internally call AgentService to generate test cases  \n• Output results to stdout or save to file",
+        "testStrategy": "• Unit tests for CLI parsing and command handlers  \n• Integration tests mocking AgentService to verify output formatting",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "CLI Scaffold Setup",
+            "description": "Initialize the Python project and create the basic CLI structure using Click or argparse",
+            "dependencies": [],
+            "details": "- Create a new Python package or module for the CLI tool\n- Install and configure Click or argparse in the project\n- Add entry point script (e.g., cli.py) with basic invocation logic\n- Ensure environment or setup.cfg points to the CLI entry point",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Define CLI Commands and Options",
+            "description": "Implement the 'generate' command with required --input and --format options",
+            "dependencies": [
+              1
+            ],
+            "details": "- Add a 'generate' subcommand to the CLI scaffold\n- Define the --input option (file path or text string)\n- Define the --format option (e.g., 'json', 'yaml', 'plain') with validation\n- Add help texts and usage examples for each option",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Integrate AgentService for Test Generation",
+            "description": "Connect the CLI command to the backend AgentService to generate tests based on natural language",
+            "dependencies": [
+              2
+            ],
+            "details": "- Import and configure the AgentService client or API wrapper\n- Within the generate command handler, send the input text and format request to AgentService\n- Handle API responses and errors gracefully\n- Add retries or fallback logic if the service call fails",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Output Formatting and Unit Tests",
+            "description": "Implement output options for stdout or file export and write unit tests for all CLI functionality",
+            "dependencies": [
+              3
+            ],
+            "details": "- Add an --output option to direct results to stdout or a specified file path\n- Format the generated test output according to the chosen format\n- Write unit tests for scaffold, command parsing, service integration, and output behavior\n- Use pytest or unittest frameworks and include mock for AgentService",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Implement Slackbot Integration for UAT Copilot",
+        "description": "Build a Slack app that handles slash commands and interactive messages",
+        "details": "• Use Slack Bolt SDK for Python  \n• Define slash command `/testpilot` to accept natural language requests  \n• Verify request signatures, parse text, and call FastAPI endpoints  \n• Post rich message responses with attachments, buttons to view logs/screenshots",
+        "testStrategy": "• Mock Slack events to test request verification and event handlers  \n• End-to-end test in a development Slack workspace to ensure messages are delivered",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup Slack App and Bolt SDK",
+            "description": "Create and configure a Slack app, install and configure the Bolt SDK in the project environment.",
+            "dependencies": [],
+            "details": "• Create a new Slack app in the workspace\n• Add required OAuth scopes (commands, chat:write, etc.)\n• Install @slack/bolt via npm or pip\n• Set SLACK_SIGNING_SECRET and SLACK_BOT_TOKEN as environment variables\n• Initialize a basic Bolt app instance",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Slash Command (/testpilot) Handler",
+            "description": "Define and implement the /testpilot slash command handler in the Bolt app to acknowledge and respond to user commands.",
+            "dependencies": [
+              1
+            ],
+            "details": "• Configure the /testpilot command in the Slack app dashboard\n• Implement boltApp.command('/testpilot', async ({ ack, payload, context }) => { … })\n• Send ack() to acknowledge the command\n• Return an initial ephemeral or in-channel response",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Request Signature Verification",
+            "description": "Secure incoming Slack requests by verifying their signatures using the app’s signing secret.",
+            "dependencies": [
+              1
+            ],
+            "details": "• Use Slack’s provided signature verification utility or implement HMAC SHA256 verification\n• Extract X-Slack-Signature and X-Slack-Request-Timestamp headers\n• Reject requests older than 5 minutes or with invalid signatures\n• Return HTTP 403 for failed verification",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Integrate FastAPI Endpoint with Slack Events",
+            "description": "Expose a FastAPI route for Slack events and slash commands, tying them into the Bolt app via the adapter.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "• Install slack_bolt.adapter.fastapi\n• Initialize FastAPI and import SlackRequestHandler\n• Mount POST /slack/events to SlackRequestHandler.handle\n• Test the endpoint locally (e.g., using ngrok) and verify event reception",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Format Rich Interactive Messages",
+            "description": "Build and send rich interactive Slack messages with attachments, blocks, and buttons for user interactions.",
+            "dependencies": [
+              4
+            ],
+            "details": "• Use Block Kit to construct messages with sections and actions\n• Add buttons and assign callback_ids\n• Handle interactive payloads in Bolt app with boltApp.action\n• Use client.chat.postMessage and client.chat.update to send and update messages",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Develop Playwright-based Test Execution Engine",
+        "description": "Integrate Playwright to run generated test scripts headlessly and collect artifacts",
+        "details": "• Create a Python module that accepts test code and parameters  \n• Spawn Playwright in a Docker container or Lambda function  \n• Implement retry logic and configurable timeouts  \n• Capture screenshots and console logs on failures",
+        "testStrategy": "• Write a sample Playwright script and execute via the engine  \n• Assert that screenshots and logs are generated and returned  \n• Simulate flaky tests to verify retry behavior",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold Execution Module",
+            "description": "Create the base structure and core components for the Playwright test execution engine.",
+            "dependencies": [],
+            "details": "Define directory layout, initialize package.json, set up TypeScript or JavaScript entry point, implement module loader and logger interfaces.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure Container or Lambda Deployment",
+            "description": "Set up environment for running the execution engine in Docker or AWS Lambda.",
+            "dependencies": [
+              1
+            ],
+            "details": "Write Dockerfile with Node and Playwright dependencies, configure AWS Lambda handler and deployment script, define environment variables and CI/CD integration points.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Parameter Handling",
+            "description": "Enable the engine to accept and validate test code paths and execution settings.",
+            "dependencies": [
+              1
+            ],
+            "details": "Parse CLI arguments or function parameters, validate inputs (test file patterns, browser options), integrate configuration fallback and defaults, expose parameter API.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Retry and Timeout Logic",
+            "description": "Implement configurable retry attempts and per-test timeout enforcement.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Integrate retry loop around test runs, read retry count from parameters, set Playwright timeout settings, handle timeouts and propagate errors after max retries.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Capture Screenshots and Logs on Failures",
+            "description": "Collect artifacts when tests fail to aid debugging.",
+            "dependencies": [
+              1,
+              4
+            ],
+            "details": "Hook into Playwright test failure events, capture full-page screenshots, collect browser console logs, save artifacts to designated output directory.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Write Integration Tests with Sample Scripts",
+            "description": "Validate the end-to-end execution engine using representative test scripts.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Create sample Playwright test files, run the engine inside Docker or Lambda, assert exit codes, verify screenshots and logs generated, integrate with CI pipeline.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Create FastAPI Endpoints for Test Generation and Execution",
+        "description": "Expose HTTP APIs for generating tests and triggering execution",
+        "details": "• POST /generate: accepts {spec, framework} and returns testCaseId and code  \n• POST /execute: accepts {testCaseId} and enqueues execution  \n• GET /results/{id}: returns execution status, logs, screenshot URLs  \n• Add Pydantic schemas for request/response validation and authentication middleware",
+        "testStrategy": "• Use pytest and httpx to test each endpoint with valid and invalid payloads  \n• Mock underlying services (AgentService, ExecutionEngine) to isolate API logic",
+        "priority": "high",
+        "dependencies": [
+          3,
+          4,
+          7
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Pydantic schemas for request and response models",
+            "description": "Define Pydantic models for the POST /generate, POST /execute, and GET /results/{id} endpoints",
+            "dependencies": [],
+            "details": "Design request bodies (e.g., GenerateRequest, ExecuteRequest) and response models (e.g., GenerateResponse, ExecuteResponse, ResultResponse) with field validation, types, and example data.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement POST /generate and POST /execute endpoints",
+            "description": "Add and configure the /generate and /execute routes in the FastAPI application",
+            "dependencies": [
+              1
+            ],
+            "details": "Define route functions for POST /generate and POST /execute that accept the Pydantic request models, call AgentService for test generation or ExecutionEngine for test execution, handle service responses, and return the appropriate Pydantic response models with status codes.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement GET /results/{id} endpoint",
+            "description": "Add the endpoint to retrieve test execution results by unique identifier",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a GET route at /results/{id} that fetches result data from storage or service, handles missing IDs with 404 errors, and returns the ResultResponse schema.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add authentication middleware",
+            "description": "Secure all test generation and execution endpoints with JWT-based authentication",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Implement FastAPI middleware or dependency that extracts and validates JWT tokens from Authorization headers, verifies user permissions, injects user info into request state, and rejects unauthorized requests with 401/403 responses.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Write pytest/httpx tests with mocks",
+            "description": "Develop automated tests covering all endpoints using pytest and httpx client with service mocks",
+            "dependencies": [
+              2,
+              3,
+              4
+            ],
+            "details": "Write unit and integration tests for POST /generate, POST /execute, and GET /results/{id}, mocking AgentService and ExecutionEngine to simulate success and error scenarios. Use pytest fixtures for test client, patch dependencies, and assert response schemas and status codes.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Implement Artifact Storage and Reporting Mechanism",
+        "description": "Store execution artifacts in S3 and notify users of results",
+        "details": "• After test execution, upload screenshots/logs to S3 with structured keys  \n• Update ExecutionResult record with S3 URLs and status  \n• Trigger Slack notifications or CLI messages on completion  \n• Implement retry on S3 upload failures and error logging",
+        "testStrategy": "• Mock S3 interactions to verify correct bucket/key naming  \n• Simulate upload errors to test retry logic  \n• End-to-end test: execute a test, confirm record updated, and notification sent",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          7,
+          8
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement S3 Upload Logic for Artifacts",
+            "description": "Develop functionality to upload screenshots and logs to S3 storage and retrieve accessible URLs.",
+            "dependencies": [],
+            "details": "- Configure AWS SDK and credentials\n- Create functions to upload files to designated S3 bucket\n- Generate and return public or presigned URLs for uploaded artifacts",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Update ExecutionResult Records with Artifact URLs",
+            "description": "Persist the S3 artifact URLs into the ExecutionResult database records after successful uploads.",
+            "dependencies": [
+              1
+            ],
+            "details": "- Extend the ExecutionResult model to include fields for screenshot and log URLs\n- Implement database update operations to store returned URLs\n- Ensure transactional integrity if upload or update fails",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Trigger Notifications on Execution Completion",
+            "description": "Implement notification triggers via Slack or CLI when test execution completes, including artifact links.",
+            "dependencies": [
+              2
+            ],
+            "details": "- Create a notification service interface supporting Slack and CLI outputs\n- Format messages to include execution status and links to artifacts\n- Invoke notifications after ExecutionResult records are updated",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Retry Mechanism and Error Logging for Uploads",
+            "description": "Enhance the upload logic with retry capabilities and detailed error logging for failed attempts.",
+            "dependencies": [
+              1
+            ],
+            "details": "- Implement exponential backoff retry strategy for transient upload errors\n- Log errors with context, including file names, attempt counts, and stack traces\n- Alert or escalate if retries exceed threshold",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Write End-to-End Tests with Mocked Services",
+            "description": "Create comprehensive end-to-end tests using mocked S3 and notification services to validate the entire flow.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "- Use testing framework to mock AWS S3 and Slack/CLI interfaces\n- Simulate successful and failed upload scenarios\n- Verify database updates and notification outputs in each scenario",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Build React Dashboard with Human-in-the-Loop Feedback",
+        "description": "Create a frontend for reviewing, editing test scripts, and submitting feedback",
+        "details": "• Scaffold React app with create-react-app or Next.js  \n• Pages: Test Management dashboard listing test cases and statuses  \n• Test Detail view showing code, logs, screenshots, and an editable code editor (e.g., Monaco)  \n• On save, POST edits to /feedback endpoint and refresh test case generation history  \n• Use WebSocket or polling to update execution statuses in real time",
+        "testStrategy": "• Unit tests for components using Jest and React Testing Library  \n• e2e tests with Playwright to verify UI flows: listing, editing, and feedback submission",
+        "priority": "medium",
+        "dependencies": [
+          5,
+          6,
+          8,
+          9
+        ],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Scaffold React/Next.js Application",
+            "description": "Set up the base Next.js project and install necessary dependencies",
+            "dependencies": [],
+            "details": "Use create-next-app or custom starter to initialize the codebase. Configure TypeScript, ESLint, Prettier, and folder structure for pages, components, and services.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Implement Test Management List View",
+            "description": "Build the UI to display and manage a list of tests",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a page under /tests that fetches test data from the API. Display results in a sortable, paginated table. Include search and filter controls.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Create Test Detail Page with Monaco Editor",
+            "description": "Develop a detailed view for individual tests with code editing",
+            "dependencies": [
+              2
+            ],
+            "details": "Add dynamic route /tests/[id]. Fetch test details and render them. Integrate the Monaco Editor component to display and edit test code or JSON payloads.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Build Feedback Submission Form",
+            "description": "Design and implement form to capture user feedback on tests",
+            "dependencies": [
+              3
+            ],
+            "details": "Add form fields (rating, comments, metadata) below the editor. Implement client-side validation using React Hook Form or Formik.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate with /feedback API",
+            "description": "Connect the feedback form to backend API endpoint",
+            "dependencies": [
+              4
+            ],
+            "details": "Use fetch or Axios to POST form data to /feedback endpoint. Handle loading, success, and error states. Display confirmation messages.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add Real-time Status Updates",
+            "description": "Implement live updates for test statuses",
+            "dependencies": [
+              5
+            ],
+            "details": "Choose WebSocket or polling strategy. Set up a service to subscribe to status updates. Update the list and detail views in real time.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Write Jest and Playwright Tests for UI Flows",
+            "description": "Create automated tests for components and end-to-end scenarios",
+            "dependencies": [
+              6
+            ],
+            "details": "Write unit tests for key components and hooks using Jest and React Testing Library. Develop Playwright scripts for flows like viewing tests, editing code, submitting feedback, and verifying live updates.",
+            "status": "pending",
+            "testStrategy": ""
+          }
+        ]
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-29T05:15:47.797Z",
+      "updated": "2025-07-29T05:15:47.797Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

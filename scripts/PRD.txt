@@ -1,0 +1,171 @@
+<context>
+# Overview  
+TestPilot AI is an autonomous LLM agent platform that transforms how teams run and scale UAT (User Acceptance Testing) and QA (Quality Assurance) for SaaS and software products. The platform uses LLM agents to interpret natural language, generate test cases, simulate user flows, and self-correct based on real user behavior, release notes, and product specs.
+
+The core problem it solves is that manual QA and UAT are expensive, repetitive, error-prone, and frequently bottleneck releases—especially for startups and scaleups without dedicated QA engineers. Scripted tests get outdated fast, and even with tools like Selenium or Cypress, writing and maintaining tests requires significant developer time.
+
+TestPilot AI targets SaaS Product Teams who need to validate critical flows every release, QA Engineers who want to scale test coverage without doing all the grunt work, Developers who need fast feedback after pushing code, and Startups who don't have a QA team but need confidence before shipping.
+
+# Core Features  
+1. **Autonomous Test Agent**
+   - Takes product spec, changelog, or user story as input
+   - Generates end-to-end test cases in plain English or testing framework code (Cypress, Playwright)
+   - Can connect to staging environment and run tests autonomously, reporting failures
+
+2. **UAT Copilot (Interactive Chatbot)**
+   - Embedded in Slack or browser extension
+   - Understands natural language commands like "Try logging in as a new user and upgrading to Pro plan"
+   - Executes flows and reports issues, screenshots, and logs
+
+3. **Regression Intelligence**
+   - Detects when existing tests become outdated based on UI diffs, DOM changes, or updated API contracts
+   - Suggests which tests to remove or update
+
+4. **Natural Language Diff & Validation**
+   - Compares historical test recordings to current UI based on queries like "Has the sign-up experience changed?"
+   - Reports visual and behavior-level changes
+
+5. **Human-in-the-loop Feedback Loop**
+   - Users can review and edit test scripts
+   - Agent learns from edits and adjusts future test generation accordingly
+
+# User Experience  
+**Primary User Personas:**
+- **SaaS Product Teams**: Need to validate critical flows every release with minimal manual effort
+- **QA Engineers**: Want to scale test coverage without doing repetitive grunt work
+- **Developers**: Need fast feedback after pushing code to catch issues early
+- **Startups**: Don't have dedicated QA teams but need confidence before shipping
+
+**Key User Flows:**
+1. **Test Generation Flow**: User provides product spec → Agent generates test cases → User reviews/edits → Agent learns and improves
+2. **UAT Execution Flow**: User requests test via natural language → Agent executes in staging → Reports results with screenshots/logs
+3. **Regression Detection Flow**: Agent monitors UI changes → Identifies outdated tests → Suggests updates or removals
+
+**UI/UX Considerations:**
+- Slack integration for seamless team communication
+- Browser extension for quick access during development
+- Dashboard for test management and analytics
+- Natural language interface to reduce learning curve
+</context>
+<PRD>
+# Technical Architecture  
+**System Components:**
+- **Agent Framework**: LangChain with OpenAI/Claude/local LLMs for natural language processing and test generation
+- **Execution Engine**: Playwright, Selenium, headless browser orchestration for test execution
+- **Frontend**: React dashboard for test management, Slackbot for UAT copilot interactions
+- **Backend**: Python + FastAPI for API services and agent coordination
+- **Infrastructure**: Docker containers, AWS Lambda/Fargate for scalable test execution
+- **Persistence**: PostgreSQL for test metadata, Redis for caching, S3 for test artifacts storage
+
+**Data Models:**
+- Test cases with natural language descriptions and generated code
+- Test execution results with screenshots, logs, and failure reports
+- User feedback and learning data for agent improvement
+- Integration configurations for various platforms and tools
+
+**APIs and Integrations:**
+- CI/CD: GitHub Actions, GitLab CI for automated test execution
+- Testing Frameworks: Playwright, Cypress, Postman, Puppeteer
+- Communication: Slack, Notion, JIRA, Linear for team collaboration
+- Analytics: Mixpanel, Segment for auto-suggesting common user flows
+
+**Infrastructure Requirements:**
+- Scalable cloud infrastructure for test execution
+- Secure handling of application credentials and test data
+- Real-time communication channels for agent-human interaction
+- Robust error handling and retry mechanisms for flaky tests
+
+# Development Roadmap  
+**Phase 1: MVP Foundation (Month 1)**
+- Natural language to test case generator (CLI + Slackbot)
+- Basic test execution framework with Playwright integration
+- Simple assertion and validation capabilities
+- Core agent framework with OpenAI/Claude integration
+
+**Phase 2: Autonomy Layer (Month 2)**
+- Advanced UI navigation and element detection
+- Screenshot capture and visual comparison capabilities
+- Simple assertions and validation logic
+- Basic regression detection for UI changes
+- Integration with staging environments
+
+**Phase 3: Production Features (Month 3)**
+- Regression engine with intelligent test maintenance
+- CI/CD plugin for automated test execution
+- SaaS dashboard for test management and analytics
+- Advanced learning from human feedback
+- Multi-agent workflow orchestration
+
+**Future Enhancements:**
+- API testing capabilities
+- Mobile app testing support
+- Advanced visual regression with AI-powered change detection
+- Agent marketplace for community-contributed testing agents
+- Full autonomous QA-as-a-service with minimal human intervention
+
+# Logical Dependency Chain
+**Foundation First (Phase 1):**
+- Agent framework and LLM integration must be established before any test generation
+- Basic test execution engine needed before advanced features
+- CLI interface provides immediate value while building more complex integrations
+
+**Quick Win Strategy:**
+- Slack integration provides immediate visibility and user engagement
+- Natural language interface reduces barrier to entry
+- Basic test generation delivers value even without full autonomy
+
+**Progressive Enhancement:**
+- Start with simple test cases and gradually add complexity
+- Build regression detection on top of existing test execution
+- Add learning capabilities incrementally based on user feedback
+- Scale from single-agent to multi-agent workflows
+
+**Atomic Feature Development:**
+- Each feature should be independently valuable
+- Test generation works without execution, execution works without regression detection
+- Integrations can be added incrementally without breaking existing functionality
+
+# Risks and Mitigations  
+**Technical Challenges:**
+- **Risk**: LLM reliability and consistency in test generation
+- **Mitigation**: Implement human-in-the-loop review process and fallback to manual test creation
+- **Risk**: Browser automation flakiness and false positives
+- **Mitigation**: Robust retry mechanisms, screenshot comparison, and configurable tolerance levels
+
+**MVP Scope Management:**
+- **Risk**: Over-engineering features that aren't core to user value
+- **Mitigation**: Focus on natural language test generation and basic execution first
+- **Risk**: Complex integrations slowing down initial development
+- **Mitigation**: Start with CLI and Slack, add other integrations incrementally
+
+**Resource Constraints:**
+- **Risk**: Limited development resources for comprehensive feature set
+- **Mitigation**: Open-core model allows community contributions and focused development on core features
+- **Risk**: High infrastructure costs for test execution
+- **Mitigation**: Use serverless architecture and optimize for cost-effective scaling
+
+**Market Validation:**
+- **Risk**: Building features users don't actually need
+- **Mitigation**: Early user feedback loops and iterative development based on real usage patterns
+
+# Appendix  
+**Business Model Details:**
+- Open-core: Core CLI & agent SDK are free with community integrations
+- Managed SaaS tiers:
+  - $99/mo Starter: 1 project, 100 tests/mo, 1 Slack workspace
+  - $399/mo Pro: Unlimited tests, CI/CD integration, multi-agent workflows
+  - Custom Enterprise: SSO, audit logs, on-prem agent support
+
+**Success Metrics:**
+- 50% reduction in QA hours per sprint
+- >90% of user stories tested before release
+- <2 bugs per sprint post-release
+- High NPS from engineers and product managers
+
+**Competitive Differentiation:**
+- Natural language input vs. traditional code-based test creation
+- Autonomous test creation vs. manual test writing
+- Visual + logical regression checks vs. script-only validation
+- Learning from feedback vs. static test maintenance
+- Open-core + hosted model vs. closed proprietary solutions
+</PRD> 
