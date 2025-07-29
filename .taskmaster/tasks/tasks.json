@@ -468,7 +468,7 @@
           4,
           7
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -476,7 +476,7 @@
             "description": "Define Pydantic models for the POST /generate, POST /execute, and GET /results/{id} endpoints",
             "dependencies": [],
             "details": "Design request bodies (e.g., GenerateRequest, ExecuteRequest) and response models (e.g., GenerateResponse, ExecuteResponse, ResultResponse) with field validation, types, and example data.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -487,7 +487,7 @@
               1
             ],
             "details": "Define route functions for POST /generate and POST /execute that accept the Pydantic request models, call AgentService for test generation or ExecutionEngine for test execution, handle service responses, and return the appropriate Pydantic response models with status codes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -498,7 +498,7 @@
               1
             ],
             "details": "Create a GET route at /results/{id} that fetches result data from storage or service, handles missing IDs with 404 errors, and returns the ResultResponse schema.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -510,7 +510,7 @@
               3
             ],
             "details": "Implement FastAPI middleware or dependency that extracts and validates JWT tokens from Authorization headers, verifies user permissions, injects user info into request state, and rejects unauthorized requests with 401/403 responses.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -523,7 +523,7 @@
               4
             ],
             "details": "Write unit and integration tests for POST /generate, POST /execute, and GET /results/{id}, mocking AgentService and ExecutionEngine to simulate success and error scenarios. Use pytest fixtures for test client, patch dependencies, and assert response schemas and status codes.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -695,7 +695,7 @@
     ],
     "metadata": {
       "created": "2025-07-29T05:15:47.797Z",
-      "updated": "2025-07-29T20:47:10.475Z",
+      "updated": "2025-07-29T20:56:03.153Z",
       "description": "Tasks for master context"
     }
   }

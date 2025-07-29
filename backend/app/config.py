@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     # GCP Service Account (for local development)
     gcp_service_account_key_path: Optional[str] = None
     
+    # JWT Configuration
+    jwt_secret_key: str = "your-secret-key-change-in-production"
+    jwt_access_token_expire_minutes: int = 30
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
