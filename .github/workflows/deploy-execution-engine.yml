@@ -1,0 +1,135 @@
+name: Deploy Execution Engine
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/app/services/execution_engine.py'
+      - 'backend/Dockerfile.execution'
+      - 'backend/requirements.txt'
+      - 'backend/app/api/execution.py'
+      - '.github/workflows/deploy-execution-engine.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/app/services/execution_engine.py'
+      - 'backend/Dockerfile.execution'
+      - 'backend/requirements.txt'
+      - 'backend/app/api/execution.py'
+      - '.github/workflows/deploy-execution-engine.yml'
+
+env:
+  PROJECT_ID: testpilotai-467409
+  REGION: us-central1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          cd backend
+          python -m pytest test_execution_engine.py -v
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Set environment
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+          fi
+
+      - name: Build and push Docker image
+        run: |
+          cd backend
+          docker build -f Dockerfile.execution \
+            -t gcr.io/$PROJECT_ID/execution-engine:$ENVIRONMENT-$(date +%Y%m%d-%H%M%S) \
+            -t gcr.io/$PROJECT_ID/execution-engine:$ENVIRONMENT-latest \
+            .
+          docker push gcr.io/$PROJECT_ID/execution-engine:$ENVIRONMENT-$(date +%Y%m%d-%H%M%S)
+          docker push gcr.io/$PROJECT_ID/execution-engine:$ENVIRONMENT-latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set environment
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "ENVIRONMENT=production" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=staging" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy testpilot-ai-execution-engine-$ENVIRONMENT \
+            --image gcr.io/$PROJECT_ID/execution-engine:$ENVIRONMENT-latest \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 4Gi \
+            --cpu 2 \
+            --timeout 900 \
+            --max-instances 10 \
+            --set-env-vars "ENVIRONMENT=$ENVIRONMENT,LOG_LEVEL=INFO" \
+            --service-account "testpilot-ai-execution-engine-$ENVIRONMENT@$PROJECT_ID.iam.gserviceaccount.com"
+
+      - name: Health check
+        run: |
+          SERVICE_URL=$(gcloud run services describe testpilot-ai-execution-engine-$ENVIRONMENT --region $REGION --format="value(status.url)")
+          echo "Service URL: $SERVICE_URL"
+          
+          # Wait for service to be ready
+          sleep 30
+          
+          # Test health endpoint
+          curl -f "$SERVICE_URL/execution/health" || exit 1
+
+      - name: Clean up old images
+        run: |
+          # Keep only the last 5 images
+          gcloud container images list-tags gcr.io/$PROJECT_ID/execution-engine --limit=5 --sort-by=~timestamp --format="value(digest)" | tail -n +6 | xargs -I {} gcloud container images delete gcr.io/$PROJECT_ID/execution-engine@{} --quiet || true 

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from app.config import settings
 from app.api.health import router as health_router
+from app.api.execution import router as execution_router
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -23,6 +24,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health_router)
+app.include_router(execution_router)
 
 @app.get("/")
 async def root():
@@ -34,7 +36,11 @@ async def root():
         "endpoints": {
             "health": "/health",
             "health_detailed": "/health/detailed",
-            "ready": "/health/ready"
+            "ready": "/health/ready",
+            "execution": "/execution",
+            "execution_health": "/execution/health",
+            "execute_test": "/execution/execute",
+            "execute_test_async": "/execution/execute-async"
         }
     }
 
