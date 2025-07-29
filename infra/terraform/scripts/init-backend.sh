@@ -23,18 +23,10 @@ for ENV in "${ENVIRONMENTS[@]}"; do
     echo "Creating S3 bucket: $STATE_BUCKET"
     
     # Create S3 bucket with versioning and encryption
-    if [ "$REGION" = "us-east-1" ]; then
-        # us-east-1 doesn't need LocationConstraint
-        aws s3api create-bucket \
-            --bucket "$STATE_BUCKET" \
-            --region "$REGION" || true
-    else
-        # Other regions need LocationConstraint
-        aws s3api create-bucket \
-            --bucket "$STATE_BUCKET" \
-            --region "$REGION" \
-            --create-bucket-configuration LocationConstraint="$REGION" || true
-    fi
+    aws s3api create-bucket \
+        --bucket "$STATE_BUCKET" \
+        --region "$REGION" \
+        --create-bucket-configuration LocationConstraint="$REGION" || true
     
     # Enable versioning
     aws s3api put-bucket-versioning \
