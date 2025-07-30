@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { Container, Box } from '@mui/material';
 import TestManagementPage from './pages/TestManagementPage';
 import TestDetailPage from './pages/TestDetailPage';
+import ApiTest from './components/ApiTest';
 import Header from './components/Header';
 import './App.css';
 
@@ -32,6 +33,7 @@ function App() {
               <Route path="/" element={<TestManagementPage />} />
               <Route path="/tests" element={<TestManagementPage />} />
               <Route path="/tests/:id" element={<TestDetailPage />} />
+              <Route path="/test-api" element={<ApiTest />} />
             </Routes>
           </Container>
         </Box>

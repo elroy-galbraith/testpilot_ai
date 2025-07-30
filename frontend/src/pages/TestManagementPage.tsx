@@ -31,17 +31,26 @@ const TestManagementPage: React.FC = () => {
   const { data: tests, loading, error, execute: fetchTests } = useApi(apiService.getTestCases);
 
   useEffect(() => {
+    console.log('TestManagementPage: useEffect triggered');
     fetchTests();
   }, [fetchTests]);
 
   useEffect(() => {
-    if (tests) {
+    console.log('TestManagementPage: tests changed:', tests);
+    console.log('TestManagementPage: error changed:', error);
+    console.log('TestManagementPage: loading changed:', loading);
+  }, [tests, error, loading]);
+
+  useEffect(() => {
+    if (tests && Array.isArray(tests)) {
       const filtered = tests.filter(test =>
         test.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         test.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         test.framework.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredTests(filtered);
+    } else {
+      setFilteredTests([]);
     }
   }, [tests, searchTerm]);
 
@@ -64,9 +73,12 @@ const TestManagementPage: React.FC = () => {
   }
 
   if (error) {
+    console.error('API Error:', error);
     return (
       <Alert severity="error" sx={{ mb: 2 }}>
-        Error loading tests: {error.detail}
+        Error loading tests: {error.detail || 'Unknown error'}
+        <br />
+        <small>Status: {error.status_code || 'Unknown'}</small>
       </Alert>
     );
   }

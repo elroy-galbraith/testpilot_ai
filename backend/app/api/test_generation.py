@@ -145,7 +145,6 @@ def get_execution_repository(db: Session = Depends(get_db)) -> ExecutionReposito
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_test(
     request: GenerateRequest,
-    current_user: AuthUser = Depends(get_current_user),
     test_case_repo: TestCaseRepository = Depends(get_test_case_repository)
 ):
     """
@@ -213,7 +212,6 @@ async def generate_test(
 async def execute_test(
     request: ExecuteRequest,
     background_tasks: BackgroundTasks,
-    current_user: AuthUser = Depends(get_current_user),
     test_case_repo: TestCaseRepository = Depends(get_test_case_repository),
     execution_repo: ExecutionRepository = Depends(get_execution_repository)
 ):
@@ -282,10 +280,65 @@ async def execute_test(
         raise HTTPException(status_code=500, detail=f"Test execution failed: {str(e)}")
 
 
+@router.get("/test-cases")
+async def get_test_cases(
+    test_case_repo: TestCaseRepository = Depends(get_test_case_repository)
+):
+    """Get all test cases."""
+    try:
+        # For now, get all test cases since we don't have user system
+        test_cases = test_case_repo.get_all()
+        return [
+            {
+                "id": str(tc.id),
+                "title": tc.title,
+                "description": tc.description or "",
+                "code": tc.generated_code,
+                "framework": tc.framework,
+                "language": tc.language,
+                "status": tc.status,
+                "createdAt": tc.created_at.isoformat() if tc.created_at else "",
+                "updatedAt": tc.updated_at.isoformat() if tc.updated_at else ""
+            }
+            for tc in test_cases
+        ]
+    except Exception as e:
+        logger.error(f"Error fetching test cases: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch test cases")
+
+
+@router.get("/test-cases/{test_case_id}")
+async def get_test_case(
+    test_case_id: int,
+    test_case_repo: TestCaseRepository = Depends(get_test_case_repository)
+):
+    """Get a specific test case by ID."""
+    try:
+        test_case = test_case_repo.get_by_id(test_case_id)
+        if not test_case:
+            raise HTTPException(status_code=404, detail="Test case not found")
+        
+        return {
+            "id": str(test_case.id),
+            "title": test_case.title,
+            "description": test_case.description or "",
+            "code": test_case.generated_code,
+            "framework": test_case.framework,
+            "language": test_case.language,
+            "status": test_case.status,
+            "createdAt": test_case.created_at.isoformat() if test_case.created_at else "",
+            "updatedAt": test_case.updated_at.isoformat() if test_case.updated_at else ""
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching test case {test_case_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch test case")
+
+
 @router.get("/results/{execution_id}", response_model=ResultResponse)
 async def get_execution_results(
     execution_id: int,
-    current_user: AuthUser = Depends(get_current_user),
     execution_repo: ExecutionRepository = Depends(get_execution_repository)
 ):
     """

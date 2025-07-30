@@ -43,7 +43,7 @@ class TestCaseRepository:
             if status:
                 query = query.filter(TestCase.status == status)
             
-            return query.offset(skip).limit(limit).order_by(desc(TestCase.created_at)).all()
+            return query.order_by(desc(TestCase.created_at)).offset(skip).limit(limit).all()
         except Exception as e:
             logger.error(f"Error getting test cases: {e}")
             return []

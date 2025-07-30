@@ -17,6 +17,7 @@ class ApiService {
 
   constructor() {
     this.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    console.log('ApiService constructor - baseURL:', this.baseURL);
     this.client = axios.create({
       baseURL: this.baseURL,
       headers: {
@@ -40,63 +41,68 @@ class ApiService {
   }
 
   // Test Generation
-  async generateTest(request: GenerateRequest): Promise<GenerateResponse> {
+  generateTest = async (request: GenerateRequest): Promise<GenerateResponse> => {
     const response: AxiosResponse<GenerateResponse> = await this.client.post(
       '/api/v1/generate',
       request
     );
     return response.data;
-  }
+  };
 
   // Test Execution
-  async executeTest(request: ExecuteRequest): Promise<ExecuteResponse> {
+  executeTest = async (request: ExecuteRequest): Promise<ExecuteResponse> => {
     const response: AxiosResponse<ExecuteResponse> = await this.client.post(
       '/api/v1/execute',
       request
     );
     return response.data;
-  }
+  };
 
   // Get Execution Results
-  async getExecutionResult(executionId: string): Promise<ExecutionResult> {
+  getExecutionResult = async (executionId: string): Promise<ExecutionResult> => {
     const response: AxiosResponse<ExecutionResult> = await this.client.get(
       `/api/v1/results/${executionId}`
     );
     return response.data;
-  }
+  };
 
   // Submit Feedback
-  async submitFeedback(request: FeedbackRequest): Promise<FeedbackResponse> {
+  submitFeedback = async (request: FeedbackRequest): Promise<FeedbackResponse> => {
     const response: AxiosResponse<FeedbackResponse> = await this.client.post(
       '/api/v1/feedback',
       request
     );
     return response.data;
-  }
+  };
 
   // Get Test Cases (for dashboard listing)
-  async getTestCases(): Promise<TestCase[]> {
+  getTestCases = async (): Promise<TestCase[]> => {
+    if (!this.baseURL) {
+      throw new Error('API baseURL is not configured');
+    }
+    console.log('getTestCases called, baseURL:', this.baseURL);
     const response: AxiosResponse<TestCase[]> = await this.client.get(
       '/api/v1/test-cases'
     );
+    console.log('getTestCases response:', response.data);
     return response.data;
-  }
+  };
 
   // Get Test Case by ID
-  async getTestCase(id: string): Promise<TestCase> {
+  getTestCase = async (id: string): Promise<TestCase> => {
     const response: AxiosResponse<TestCase> = await this.client.get(
       `/api/v1/test-cases/${id}`
     );
     return response.data;
-  }
+  };
 
   // Health Check
-  async healthCheck(): Promise<{ status: string }> {
+  healthCheck = async (): Promise<{ status: string }> => {
     const response: AxiosResponse<{ status: string }> = await this.client.get(
       '/health'
     );
     return response.data;
-  }
+  };
 }
 
 // Export singleton instance

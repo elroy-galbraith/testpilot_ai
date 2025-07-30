@@ -26,10 +26,13 @@ export function useApi<T>(
       setState(prev => ({ ...prev, loading: true, error: null }));
       
       try {
+        console.log('API call starting...', apiFunction.name);
         const result = await apiFunction(...args);
+        console.log('API call successful:', result);
         setState({ data: result, loading: false, error: null });
         return result;
       } catch (error) {
+        console.error('API call failed:', error);
         const apiError = error as ApiError;
         setState({ data: null, loading: false, error: apiError });
         return null;
