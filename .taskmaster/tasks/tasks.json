@@ -613,7 +613,7 @@
           8,
           9
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -621,7 +621,7 @@
             "description": "Set up the base Next.js project and install necessary dependencies",
             "dependencies": [],
             "details": "Use create-next-app or custom starter to initialize the codebase. Configure TypeScript, ESLint, Prettier, and folder structure for pages, components, and services.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -631,8 +631,8 @@
             "dependencies": [
               1
             ],
-            "details": "Create a page under /tests that fetches test data from the API. Display results in a sortable, paginated table. Include search and filter controls.",
-            "status": "pending",
+            "details": "Create a page under /tests that fetches test data from the API. Display results in a sortable, paginated table. Include search and filter controls.\n<info added on 2025-07-30T07:56:16.225Z>\nAdded runtime safety checks in TestManagementPage.tsx to prevent “tests.filter is not a function” errors:  \n• In the useEffect hook (around line 45), wrap filter calls with `if (tests && Array.isArray(tests))`  \n• Default `filteredTests` to an empty array when `tests` isn’t an array  \n• Verified API at /api/v1/test-cases returns the expected JSON array and the UI no longer throws errors during loading or on unexpected responses\n</info added on 2025-07-30T07:56:16.225Z>",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -643,7 +643,7 @@
               2
             ],
             "details": "Add dynamic route /tests/[id]. Fetch test details and render them. Integrate the Monaco Editor component to display and edit test code or JSON payloads.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -654,7 +654,7 @@
               3
             ],
             "details": "Add form fields (rating, comments, metadata) below the editor. Implement client-side validation using React Hook Form or Formik.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -665,7 +665,7 @@
               4
             ],
             "details": "Use fetch or Axios to POST form data to /feedback endpoint. Handle loading, success, and error states. Display confirmation messages.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -676,7 +676,7 @@
               5
             ],
             "details": "Choose WebSocket or polling strategy. Set up a service to subscribe to status updates. Update the list and detail views in real time.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -687,7 +687,7 @@
               6
             ],
             "details": "Write unit tests for key components and hooks using Jest and React Testing Library. Develop Playwright scripts for flows like viewing tests, editing code, submitting feedback, and verifying live updates.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -1047,7 +1047,7 @@
     ],
     "metadata": {
       "created": "2025-07-29T05:15:47.797Z",
-      "updated": "2025-07-30T03:14:17.314Z",
+      "updated": "2025-07-30T03:32:08.904Z",
       "description": "Tasks for master context"
     }
   }
