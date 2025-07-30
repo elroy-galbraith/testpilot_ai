@@ -51,8 +51,8 @@ lerna-debug.log*
 Thumbs.db
 
 # Task files
-# tasks.json
-# tasks/
+!tasks.json
+tasks/
 
 # Coverage reports
 coverage/

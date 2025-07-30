@@ -531,72 +531,72 @@
       {
         "id": 9,
         "title": "Implement Artifact Storage and Reporting Mechanism",
-        "description": "Store execution artifacts in S3 and notify users of results",
-        "details": "• After test execution, upload screenshots/logs to S3 with structured keys  \n• Update ExecutionResult record with S3 URLs and status  \n• Trigger Slack notifications or CLI messages on completion  \n• Implement retry on S3 upload failures and error logging",
-        "testStrategy": "• Mock S3 interactions to verify correct bucket/key naming  \n• Simulate upload errors to test retry logic  \n• End-to-end test: execute a test, confirm record updated, and notification sent",
-        "priority": "medium",
+        "description": "Store execution artifacts in GCP Cloud Storage and notify users of results",
+        "status": "done",
         "dependencies": [
           4,
           7,
           8
         ],
-        "status": "done",
+        "priority": "medium",
+        "details": "• After test execution, upload screenshots/logs to GCP Cloud Storage with structured object names\n• Update ExecutionResult record with Cloud Storage URLs and status\n• Trigger Slack notifications or CLI messages on completion, including artifact links\n• Implement retry on Cloud Storage upload failures with exponential backoff and error logging",
+        "testStrategy": "• Mock GCP Cloud Storage interactions to verify correct bucket and object naming\n• Simulate upload errors to test retry logic for transient failures\n• End-to-end test: execute a test, confirm ExecutionResult record updated with GCS URLs, and notification sent with correct links",
         "subtasks": [
           {
             "id": 1,
-            "title": "Implement S3 Upload Logic for Artifacts",
-            "description": "Develop functionality to upload screenshots and logs to S3 storage and retrieve accessible URLs.",
-            "dependencies": [],
-            "details": "- Configure AWS SDK and credentials\n- Create functions to upload files to designated S3 bucket\n- Generate and return public or presigned URLs for uploaded artifacts",
+            "title": "Implement GCP Cloud Storage Upload Logic for Artifacts",
+            "description": "Develop functionality to upload screenshots and logs to GCP Cloud Storage and retrieve signed URLs.",
+            "details": "- Configure Google Cloud Storage client and service account credentials\n- Create functions to upload files to designated GCS bucket with structured object paths\n- Generate and return signed URLs or public URLs for uploaded artifacts\n- Implement proper error handling for GCS-specific exceptions",
             "status": "done",
-            "testStrategy": ""
+            "dependencies": [],
+            "parentTaskId": 9
           },
           {
             "id": 2,
-            "title": "Update ExecutionResult Records with Artifact URLs",
-            "description": "Persist the S3 artifact URLs into the ExecutionResult database records after successful uploads.",
-            "dependencies": [
-              1
-            ],
-            "details": "- Extend the ExecutionResult model to include fields for screenshot and log URLs\n- Implement database update operations to store returned URLs\n- Ensure transactional integrity if upload or update fails",
+            "title": "Update ExecutionResult Records with Cloud Storage URLs",
+            "description": "Persist the GCP Cloud Storage artifact URLs into the ExecutionResult database records after successful uploads.",
+            "details": "- Extend the ExecutionResult model to include fields for screenshot and log URLs (already implemented)\n- Implement database update operations to store returned GCS URLs\n- Ensure transactional integrity if upload or update fails\n- Add validation for GCS URL format and accessibility",
             "status": "done",
-            "testStrategy": ""
+            "dependencies": [
+              "9.1"
+            ],
+            "parentTaskId": 9
           },
           {
             "id": 3,
             "title": "Trigger Notifications on Execution Completion",
-            "description": "Implement notification triggers via Slack or CLI when test execution completes, including artifact links.",
-            "dependencies": [
-              2
-            ],
-            "details": "- Create a notification service interface supporting Slack and CLI outputs\n- Format messages to include execution status and links to artifacts\n- Invoke notifications after ExecutionResult records are updated",
+            "description": "Implement notification triggers via Slack or CLI when test execution completes, including Cloud Storage artifact links.",
+            "details": "- Create a notification service interface supporting Slack and CLI outputs\n- Format messages to include execution status and links to GCS artifacts\n- Invoke notifications after ExecutionResult records are updated\n- Include proper error handling for notification failures",
             "status": "done",
-            "testStrategy": ""
+            "dependencies": [
+              "9.2"
+            ],
+            "parentTaskId": 9
           },
           {
             "id": 4,
-            "title": "Add Retry Mechanism and Error Logging for Uploads",
-            "description": "Enhance the upload logic with retry capabilities and detailed error logging for failed attempts.",
-            "dependencies": [
-              1
-            ],
-            "details": "- Implement exponential backoff retry strategy for transient upload errors\n- Log errors with context, including file names, attempt counts, and stack traces\n- Alert or escalate if retries exceed threshold",
+            "title": "Add Retry Mechanism and Error Logging for Cloud Storage Uploads",
+            "description": "Enhance the upload logic with retry capabilities and detailed error logging for GCP Cloud Storage failures.",
+            "details": "- Implement exponential backoff retry strategy for transient GCS upload errors\n- Log errors with context, including object paths, attempt counts, and stack traces\n- Alert or escalate if retries exceed threshold\n- Handle GCS-specific error types (quota exceeded, network issues, etc.)\n<info added on 2025-07-30T03:07:11.746Z>\nWrap the existing GCS upload calls in a retry helper that applies exponential backoff with jitter, starting at 200 ms and doubling on each retry up to a maximum of 5 seconds, with a configurable maximum of 5 attempts. Catch transient error codes (HTTP 429, 500, 503) and network timeouts, and on each retry log a structured entry containing bucket name, object path, attempt number, error code, error message, and full stack trace. Expose backoff parameters (initial delay, multiplier, max delay, max attempts) via environment variables. After exceeding the retry threshold, record a critical error, emit an alert to the monitoring system, and escalate via Slack notification. Add unit tests that mock the GCS client to simulate transient failures and verify both retry behavior and detailed error logging.\n</info added on 2025-07-30T03:07:11.746Z>\n<info added on 2025-07-30T03:09:53.942Z>\n- Added exponential backoff retry decorator around all GCS operations with jitter to prevent thundering-herd; initial_delay, multiplier, max_delay, and max_attempts are now configurable via environment variables  \n- Classified errors as transient (HTTP 429, 500, 503, network timeouts) versus non-transient (e.g., 403, 404) and retry only on transient failures  \n- Enhanced structured logging for every attempt, capturing bucket name, object path, attempt number, applied delay, error code, error message, and full stack trace  \n- Exposed a health check endpoint that verifies GCS client connectivity and retry/backoff configuration  \n- Added unit tests with a mocked GCS client to validate retry behavior, jitter distribution, error classification, and detailed logging\n</info added on 2025-07-30T03:09:53.942Z>",
             "status": "done",
-            "testStrategy": ""
+            "dependencies": [
+              "9.1"
+            ],
+            "parentTaskId": 9
           },
           {
             "id": 5,
-            "title": "Write End-to-End Tests with Mocked Services",
-            "description": "Create comprehensive end-to-end tests using mocked S3 and notification services to validate the entire flow.",
-            "dependencies": [
-              1,
-              2,
-              3,
-              4
-            ],
-            "details": "- Use testing framework to mock AWS S3 and Slack/CLI interfaces\n- Simulate successful and failed upload scenarios\n- Verify database updates and notification outputs in each scenario",
+            "title": "Write End-to-End Tests with Mocked GCP Cloud Storage",
+            "description": "Create comprehensive end-to-end tests using mocked GCP Cloud Storage and notification services to validate the entire flow.",
+            "details": "- Use testing framework to mock GCP Cloud Storage client and Slack/CLI interfaces\n- Simulate successful and failed GCS upload scenarios\n- Verify database updates and notification outputs in each scenario\n- Test retry logic and error handling paths\n<info added on 2025-07-30T03:10:13.529Z>\n- Use unittest.mock to patch the Google Cloud Storage client in end-to-end tests  \n- Define test cases for:  \n  • Successful upload: verify ExecutionResult URL is updated and Slack/CLI notifications are sent with correct artifact links  \n  • Transient failures: simulate retryable errors, assert retry logic invokes exponential backoff and eventually succeeds  \n  • Permanent failures: simulate non-retryable errors, verify error is logged and failure notification is sent  \n- Mock bucket and blob objects to control upload responses  \n- Assert expected number of retry attempts and backoff intervals  \n- Mock Slack and CLI notification interfaces to capture and verify payloads in each scenario\n</info added on 2025-07-30T03:10:13.529Z>\n<info added on 2025-07-30T03:14:11.888Z>\n- Added an end-to-end test suite file using unittest.mock to patch the GCP Cloud Storage client, bucket, and blob objects.  \n- Defined test scenarios for:  \n  • Successful uploads of multiple artifact types, verifying ExecutionResult URL updates and Slack/CLI notification payloads.  \n  • Transient failures with exponential backoff retry logic and eventual success after configured attempts.  \n  • Permanent failures with error logging and failure notification assertions.  \n  • Health check endpoint responses for the storage integration.  \n- Validated database integration by asserting correct updates to ExecutionResult records in each scenario.\n</info added on 2025-07-30T03:14:11.888Z>",
             "status": "done",
-            "testStrategy": ""
+            "dependencies": [
+              "9.1",
+              "9.2",
+              "9.3",
+              "9.4"
+            ],
+            "parentTaskId": 9
           }
         ]
       },
@@ -768,7 +768,7 @@
         "description": "Set up production-ready environment configuration including API keys, database connections, Slack credentials, and security settings by creating configuration files and integrating with a secrets management system.",
         "details": "1. Identify all required environment variables:\n   • LLM keys: OPENAI_API_KEY, ANTHROPIC_API_KEY\n   • Database: DATABASE_URL (Cloud SQL private IP), REDIS_URL\n   • Artifact storage: S3_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY (if using S3)\n   • Slack: SLACK_SIGNING_SECRET, SLACK_BOT_TOKEN\n   • GCP: GCP_PROJECT, GOOGLE_APPLICATION_CREDENTIALS (for Terraform/SDK)\n   • CI/CD: any webhook URLs or deployment tokens\n2. Choose a secrets management solution (e.g., GCP Secret Manager or HashiCorp Vault) and provision secrets:\n   • Create secret entries for each variable in the chosen system\n   • Set IAM policies to restrict access to production service accounts only\n3. Create production configuration files:\n   • backend/.env.production (excluded from VCS) with references or placeholders\n   • CI/CD pipeline templates (deploy.yml) updated to pull secrets at runtime\n   • Terraform variables file (terraform/prod.tfvars) referencing secret manager values via data sources\n4. Integrate secrets retrieval in CI/CD and application startup:\n   • In GitHub Actions deploy job, add steps to authenticate to Secret Manager and export env vars\n   • Modify application entrypoint to validate presence of required variables on startup and fail fast if missing\n5. Document the process:\n   • Update README.md with instructions for creating and rotating secrets\n   • Provide sample commands for local staging (e.g., using direnv or local vault dev server)\n6. Implement security best practices:\n   • Ensure no plaintext secrets in code or logs\n   • Enable encryption at rest for secret store\n   • Rotate secrets regularly and test automatic rotation",
         "testStrategy": "1. Deploy to a staging environment using the production configuration:\n   • Verify CI/CD pipeline successfully fetches secrets and passes them to the application\n   • Confirm application health endpoint responds (indicating env vars loaded)\n2. Validate each external integration:\n   • Database: run a simple query via backend on startup\n   • Redis: connect and perform a set/get\n   • Slack: send a test slash command event and validate response\n   • LLM: invoke a minimal /generate API call and verify a valid response\n3. Negative tests:\n   • Remove or corrupt one secret in the manager, trigger a deploy, and ensure startup fails with clear error\n4. Secret rotation test:\n   • Rotate one key in the secret store, update pipeline, redeploy, and verify the new key is in effect without downtime",
-        "status": "pending",
+        "status": "in-progress",
         "dependencies": [
           1,
           2,
@@ -1047,7 +1047,7 @@
     ],
     "metadata": {
       "created": "2025-07-29T05:15:47.797Z",
-      "updated": "2025-07-30T02:42:02.639Z",
+      "updated": "2025-07-30T03:14:17.314Z",
       "description": "Tasks for master context"
     }
   }
