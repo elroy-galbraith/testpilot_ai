@@ -1,11 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from datetime import datetime
 import uuid
-
-from app.auth.jwt_auth import get_current_user
-from app.models.user import User
 
 router = APIRouter(prefix="/api/v1", tags=["feedback"])
 
@@ -34,16 +31,12 @@ class FeedbackCreateResponse(BaseModel):
 feedback_storage = {}
 
 @router.post("/feedback", response_model=FeedbackCreateResponse)
-async def submit_feedback(
-    feedback: FeedbackRequest,
-    current_user: Optional[User] = Depends(get_current_user)
-):
+async def submit_feedback(feedback: FeedbackRequest):
     """
     Submit feedback for a test execution.
     
     Args:
         feedback: The feedback data including rating, comments, and metadata
-        current_user: The authenticated user (optional for now)
     
     Returns:
         FeedbackCreateResponse: Confirmation of feedback submission
@@ -73,7 +66,7 @@ async def submit_feedback(
             comments=feedback.comments,
             metadata=feedback.metadata or {},
             created_at=datetime.utcnow(),
-            user_id=current_user.id if current_user else None
+            user_id=None  # No user system implemented yet
         )
         
         # Store feedback (in production, save to database)
@@ -99,16 +92,12 @@ async def submit_feedback(
         )
 
 @router.get("/feedback/{feedback_id}", response_model=FeedbackResponse)
-async def get_feedback(
-    feedback_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
-):
+async def get_feedback(feedback_id: str):
     """
     Retrieve feedback by ID.
     
     Args:
         feedback_id: The ID of the feedback to retrieve
-        current_user: The authenticated user
     
     Returns:
         FeedbackResponse: The feedback data
@@ -122,16 +111,12 @@ async def get_feedback(
     return FeedbackResponse(**feedback_storage[feedback_id])
 
 @router.get("/feedback/test-case/{test_case_id}", response_model=list[FeedbackResponse])
-async def get_feedback_by_test_case(
-    test_case_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
-):
+async def get_feedback_by_test_case(test_case_id: str):
     """
     Retrieve all feedback for a specific test case.
     
     Args:
         test_case_id: The ID of the test case
-        current_user: The authenticated user
     
     Returns:
         List[FeedbackResponse]: List of feedback for the test case
@@ -144,16 +129,12 @@ async def get_feedback_by_test_case(
     return feedback_list
 
 @router.get("/feedback/execution/{execution_id}", response_model=list[FeedbackResponse])
-async def get_feedback_by_execution(
-    execution_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
-):
+async def get_feedback_by_execution(execution_id: str):
     """
     Retrieve all feedback for a specific execution.
     
     Args:
         execution_id: The ID of the execution
-        current_user: The authenticated user
     
     Returns:
         List[FeedbackResponse]: List of feedback for the execution
