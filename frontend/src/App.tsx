@@ -31,6 +31,9 @@ function App() {
             <Routes>
               <Route path="/" element={<TestManagementPage />} />
               <Route path="/tests" element={<TestManagementPage />} />
+              {/* Future route for creating new tests */}
+              {/* <Route path="/tests/new" element={<NewTestPage />} /> */}
+              {/* Dynamic route must come last to avoid catching static routes */}
               <Route path="/tests/:id" element={<TestDetailPage />} />
             </Routes>
           </Container>

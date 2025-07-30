@@ -61,8 +61,8 @@ const Header: React.FC = () => {
             color="inherit" 
             startIcon={<Add />}
             onClick={() => {
-              // For now, navigate to a sample test detail page
-              window.location.href = '/tests/sample';
+              // For now, show a coming soon message
+              alert('🚧 New Test Creation UI coming soon!\n\nFor now, you can:\n• Use Slack: "/testpilot [your request]"\n• Use CLI: testpilot-cli generate "[your request]"');
             }}
           >
             New Test

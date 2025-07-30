@@ -37,9 +37,15 @@ const TestDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (id) {
+      // Validate that ID is a number
+      if (!/^\d+$/.test(id)) {
+        console.error(`Invalid test case ID: "${id}". Expected a numeric ID.`);
+        navigate('/tests'); // Redirect back to test list
+        return;
+      }
       fetchTestCase(id);
     }
-  }, [id, fetchTestCase]);
+  }, [id, fetchTestCase, navigate]);
 
   useEffect(() => {
     if (testCase) {

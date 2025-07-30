@@ -51,8 +51,8 @@ lerna-debug.log*
 Thumbs.db
 
 # Task files
-!tasks.json
 tasks/
+!.taskmaster/tasks/tasks.json
 
 # Coverage reports
 coverage/
@@ -107,5 +107,8 @@ Thumbs.db
 # Venv
 *venv*
 
-# db
-testpilot.db
+# Database files
+backend/testpilot.db
+
+# Test run metadata
+.last-run.json
