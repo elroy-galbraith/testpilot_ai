@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Chip, ChipProps } from '@mui/material';
 import { useApi } from '../hooks/useApi';
 import { apiService } from '../services/api';
-import { ExecutionResult } from '../types/api';
 
 interface RealTimeStatusChipProps {
   testCaseId: string;
@@ -16,10 +15,8 @@ const RealTimeStatusChip: React.FC<RealTimeStatusChipProps> = ({
   onStatusChange,
 }) => {
   const [status, setStatus] = useState(initialStatus);
-  const [lastExecutionId, setLastExecutionId] = useState<string | null>(null);
 
   const { execute: getTestCases } = useApi(apiService.getTestCases);
-  const { execute: getExecutionResult } = useApi(apiService.getExecutionResult);
 
   // Poll for status updates every 5 seconds
   useEffect(() => {

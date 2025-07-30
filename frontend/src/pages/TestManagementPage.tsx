@@ -45,18 +45,7 @@ const TestManagementPage: React.FC = () => {
     }
   }, [tests, searchTerm]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'running':
-        return 'warning';
-      case 'failed':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+
 
   const handleRefresh = () => {
     fetchTests();

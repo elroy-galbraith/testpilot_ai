@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useApi } from './useApi';
 import { apiService } from '../services/api';
-import { ExecutionResult } from '../types/api';
 
 interface UseRealTimeUpdatesOptions {
   enabled?: boolean;

@@ -4,12 +4,10 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Chip,
   Button,
   CircularProgress,
   Alert,
-  Divider,
   Card,
   CardContent,
 } from '@mui/material';
@@ -18,7 +16,7 @@ import Editor from '@monaco-editor/react';
 import { useApi } from '../hooks/useApi';
 import { useRealTimeUpdates } from '../hooks/useRealTimeUpdates';
 import { apiService } from '../services/api';
-import { TestCase, ExecutionResult } from '../types/api';
+
 import FeedbackForm from '../components/FeedbackForm';
 
 const TestDetailPage: React.FC = () => {
@@ -109,9 +107,9 @@ const TestDetailPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
         {/* Test Information */}
-        <Grid item xs={12} md={4}>
+        <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -169,10 +167,10 @@ const TestDetailPage: React.FC = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Code Editor */}
-        <Grid item xs={12} md={8}>
+        <Box sx={{ flex: '2 1 600px', minWidth: 0 }}>
           <Paper sx={{ height: '600px' }}>
             <Box p={2} borderBottom={1} borderColor="divider">
               <Typography variant="h6">
@@ -192,11 +190,11 @@ const TestDetailPage: React.FC = () => {
               }}
             />
           </Paper>
-        </Grid>
+        </Box>
 
         {/* Execution Results */}
         {executionResult && (
-          <Grid item xs={12}>
+          <Box sx={{ width: '100%' }}>
             <Card>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -264,19 +262,19 @@ const TestDetailPage: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         )}
 
         {/* Feedback Form */}
         {executionResult && (
-          <Grid item xs={12}>
+          <Box sx={{ width: '100%' }}>
             <FeedbackForm 
               testCaseId={testCase.id}
               executionId={executionResult.id}
             />
-          </Grid>
+          </Box>
         )}
-      </Grid>
+      </Box>
     </Box>
   );
 };
