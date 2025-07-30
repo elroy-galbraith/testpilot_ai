@@ -7,6 +7,7 @@ from app.api.execution import router as execution_router
 from app.api.test_generation import router as test_generation_router
 from app.api.auth import router as auth_router
 from app.api.slack import router as slack_router
+from app.api.feedback import router as feedback_router
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -31,6 +32,7 @@ app.include_router(execution_router)
 app.include_router(test_generation_router)
 app.include_router(auth_router)
 app.include_router(slack_router)
+app.include_router(feedback_router)
 
 @app.get("/")
 async def root():
@@ -53,6 +55,8 @@ async def root():
             "test_generation": "/api/v1/generate",
             "test_execution": "/api/v1/execute",
             "test_results": "/api/v1/results/{execution_id}",
+            "feedback_submit": "/api/v1/feedback",
+            "feedback_get": "/api/v1/feedback/{feedback_id}",
             "slack_events": "/slack/events",
             "slack_events_get": "/slack/events (GET)",
             "slack_health": "/slack/health"
