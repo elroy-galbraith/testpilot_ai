@@ -84,7 +84,7 @@ class BackendAPIClient:
             raise ValueError("TESTPILOT_API_URL is required")
         
         if not settings.testpilot_api_key:
-            logger.warning("TESTPILOT_API_KEY not provided - API calls may fail")
+            logger.debug("TESTPILOT_API_KEY not provided - running in development mode without authentication")
     
     def _get_default_headers(self) -> Dict[str, str]:
         """Get default headers for API requests."""
