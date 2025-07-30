@@ -65,7 +65,17 @@ async def slack_events(request: Request):
             return Response(content="OK", media_type="text/plain")
         
         # Let the Slack Bolt handler process the request
-        return await handler.handle(request)
+        try:
+            logger.info(f"Processing Slack event with handler: {type(handler)}")
+            result = await handler.handle(request)
+            logger.info(f"Handler result: {result}")
+            return result
+        except Exception as handler_error:
+            logger.error(f"Handler error: {handler_error}")
+            logger.error(f"Handler error type: {type(handler_error)}")
+            import traceback
+            logger.error(f"Handler traceback: {traceback.format_exc()}")
+            raise handler_error
         
     except Exception as e:
         logger.error(f"Error handling Slack event: {e}")
