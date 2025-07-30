@@ -4,11 +4,14 @@ Handles slash commands, interactive messages, and event processing.
 """
 
 import logging
+import asyncio
+import httpx
 from typing import Optional, Dict, Any
 from slack_bolt import App
 from slack_bolt.adapter.fastapi import SlackRequestHandler
 from slack_sdk.errors import SlackApiError
 from app.config import settings
+from app.services.backend_client import get_backend_client
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +23,7 @@ class SlackService:
         """Initialize the Slack service with Bolt app."""
         self.app = None
         self.handler = None
+        self.backend_client = None
         self._initialize_app()
     
     def _initialize_app(self):
@@ -112,8 +116,10 @@ class SlackService:
                     thread_ts=command.get("ts")
                 )
                 
-                # Process the test request synchronously
-                self._process_test_request_sync(user_request, user_id, channel_id, response["ts"])
+                # Process the test request asynchronously
+                asyncio.create_task(
+                    self._process_test_request_async(user_request, user_id, channel_id, response["ts"])
+                )
                 
             except Exception as e:
                 logger.error(f"Error handling /testpilot command: {e}")
@@ -146,8 +152,10 @@ class SlackService:
                     thread_ts=event.get("ts")
                 )
                 
-                # Process the test request synchronously
-                self._process_test_request_sync(user_request, event.get("user"), event.get("channel"), response["ts"])
+                # Process the test request asynchronously
+                asyncio.create_task(
+                    self._process_test_request_async(user_request, event.get("user"), event.get("channel"), response["ts"])
+                )
                 
             except Exception as e:
                 logger.error(f"Error handling app mention: {e}")
@@ -175,11 +183,245 @@ class SlackService:
         async def handle_rerun_test(ack, body, say):
             """Handle 'Rerun Test' button click."""
             await ack()
-            # TODO: Implement test rerun functionality
-            await say(text="🔄 Test rerun functionality coming soon!")
+            
+            try:
+                # Extract test case ID from the button action
+                # The test case ID should be stored in the action value or message metadata
+                action_value = body.get("actions", [{}])[0].get("value", "")
+                
+                if not action_value:
+                    await say(text="❌ Unable to identify test case for rerun. Please try the original command again.")
+                    return
+                
+                # Parse test case ID from the action value
+                try:
+                    test_case_id = int(action_value)
+                except ValueError:
+                    await say(text="❌ Invalid test case ID. Please try the original command again.")
+                    return
+                
+                # Get backend client
+                backend_client = await get_backend_client()
+                
+                # Execute the test
+                execution_result = await backend_client.execute_test(
+                    test_case_id=test_case_id,
+                    browser="chromium",
+                    headless=True,
+                    timeout=30000,
+                    retry_count=3,
+                    retry_delay=1000,
+                    screenshot_on_failure=True,
+                    capture_logs=True
+                )
+                
+                if not execution_result:
+                    await say(text=f"❌ Failed to rerun test case {test_case_id}")
+                    return
+                
+                # Send execution started message
+                await say(
+                    text=f"🔄 Rerunning test case {test_case_id}...",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*Test Rerun Started:*\n\n*Test Case ID:* {test_case_id}\n*Execution ID:* {execution_result.get('execution_id', 'N/A')}\n*Status:* Queued"
+                            }
+                        }
+                    ]
+                )
+                
+            except Exception as e:
+                logger.error(f"Error handling rerun test: {e}")
+                await say(text="❌ Error rerunning test. Please try again or contact support.")
     
+    async def _process_test_request_async(self, user_request: str, user_id: str, channel_id: str, thread_ts: str):
+        """Process a test request from Slack asynchronously using real backend API."""
+        try:
+            # Get backend client
+            backend_client = await get_backend_client()
+            
+            # Send initial processing message
+            await self.app.client.chat_postMessage(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                text="🔄 Generating test cases...",
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Processing:* {user_request}\n\n🤖 I'm analyzing your request and generating test cases..."
+                        }
+                    }
+                ]
+            )
+            
+            # Generate test case using backend API
+            test_case = await backend_client.generate_test_case(
+                spec=user_request,
+                framework="playwright",
+                language="javascript",
+                title=f"Slack Test: {user_request[:50]}...",
+                description=f"Test generated from Slack request: {user_request}"
+            )
+            
+            if not test_case:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="❌ Failed to generate test cases",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*Error:* Failed to generate test cases for: {user_request}\n\nPlease try again or provide more specific details."
+                            }
+                        }
+                    ]
+                )
+                return
+            
+            # Send test generation success message
+            await self.app.client.chat_postMessage(
+                channel=channel_id,
+                thread_ts=thread_ts,
+                text="✅ Test case generated successfully!",
+                blocks=[
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Test Case Generated:* {user_request}\n\n*Test Case ID:* {test_case.get('test_case_id', 'N/A')}\n*Framework:* {test_case.get('framework', 'N/A')}\n*Language:* {test_case.get('language', 'N/A')}"
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "🔄 *Next Steps:*\n• Setting up test environment\n• Running automated tests\n• Preparing detailed report"
+                        }
+                    }
+                ]
+            )
+            
+            # Execute the generated test
+            execution_result = await backend_client.execute_test(
+                test_case_id=test_case["test_case_id"],
+                browser="chromium",
+                headless=True,
+                timeout=30000,
+                retry_count=3,
+                retry_delay=1000,
+                screenshot_on_failure=True,
+                capture_logs=True
+            )
+            
+            if not execution_result:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="❌ Failed to execute test",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*Error:* Generated test case but failed to execute it.\n\n*Test Case ID:* {test_case.get('test_case_id', 'N/A')}"
+                            }
+                        }
+                    ]
+                )
+                return
+            
+            # Send comprehensive test results
+            await self._send_test_results(channel_id, thread_ts, user_request, test_case, execution_result)
+            
+        except httpx.HTTPStatusError as e:
+            # Use the user-friendly error message from the backend client
+            error_message = str(e)
+            logger.error(f"HTTP error processing test request: {e.response.status_code} - {e.response.text}")
+            try:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="❌ Error processing request",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*Error:* {error_message}\n\nPlease try again or contact support."
+                            }
+                        }
+                    ]
+                )
+            except Exception as send_error:
+                logger.error(f"Failed to send error message to Slack: {send_error}")
+        except httpx.TimeoutException as e:
+            logger.error(f"Timeout error processing test request: {e}")
+            try:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="⏰ Request timeout",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "⏰ *Request Timeout*\n\nThe request took too long to process. Please try again with a simpler request or contact support if the issue persists."
+                            }
+                        }
+                    ]
+                )
+            except Exception as send_error:
+                logger.error(f"Failed to send timeout message to Slack: {send_error}")
+        except httpx.RequestError as e:
+            logger.error(f"Network error processing test request: {e}")
+            try:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="🌐 Network error",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "🌐 *Network Error*\n\nUnable to connect to the test service. Please check your connection and try again."
+                            }
+                        }
+                    ]
+                )
+            except Exception as send_error:
+                logger.error(f"Failed to send network error message to Slack: {send_error}")
+        except Exception as e:
+            logger.error(f"Unexpected error processing test request: {e}")
+            try:
+                await self.app.client.chat_postMessage(
+                    channel=channel_id,
+                    thread_ts=thread_ts,
+                    text="❌ Unexpected error",
+                    blocks=[
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "❌ *Unexpected Error*\n\nAn unexpected error occurred. Please try again or contact support."
+                            }
+                        }
+                    ]
+                )
+            except Exception as send_error:
+                logger.error(f"Failed to send error message to Slack: {send_error}")
+                pass
+
     def _process_test_request_sync(self, user_request: str, user_id: str, channel_id: str, thread_ts: str):
-        """Process a test request from Slack synchronously."""
+        """Process a test request from Slack synchronously (legacy method - kept for compatibility)."""
         try:
             # Send initial processing message
             self.app.client.chat_postMessage(
@@ -231,171 +473,14 @@ class SlackService:
             except:
                 pass
 
-    async def _process_test_request(self, user_request: str, user_id: str, channel_id: str, thread_ts: str):
-        """Process a test request from Slack (async version - kept for future use)."""
-        try:
-            # Send initial processing message
-            await self.app.client.chat_postMessage(
-                channel=channel_id,
-                thread_ts=thread_ts,
-                text="🔄 Generating test cases...",
-                blocks=[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*Processing:* {user_request}\n\n🤖 I'm analyzing your request and generating test cases..."
-                        }
-                    }
-                ]
-            )
-            
-            # Call TestPilot AI backend to generate tests
-            test_case = await self._generate_test_case(user_request)
-            
-            if not test_case:
-                await self.app.client.chat_postMessage(
-                    channel=channel_id,
-                    thread_ts=thread_ts,
-                    text="❌ Failed to generate test cases",
-                    blocks=[
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"*Error:* Failed to generate test cases for: {user_request}\n\nPlease try again or provide more specific details."
-                            }
-                        }
-                    ]
-                )
-                return
-            
-            # Execute the generated test
-            execution_result = await self._execute_test(test_case["id"])
-            
-            if not execution_result:
-                await self.app.client.chat_postMessage(
-                    channel=channel_id,
-                    thread_ts=thread_ts,
-                    text="❌ Failed to execute test",
-                    blocks=[
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"*Error:* Generated test case but failed to execute it.\n\n*Test Case ID:* {test_case['id']}"
-                            }
-                        }
-                    ]
-                )
-                return
-            
-            # Send comprehensive test results
-            await self._send_test_results(channel_id, thread_ts, user_request, test_case, execution_result)
-            
-        except Exception as e:
-            logger.error(f"Error processing test request: {e}")
-            await self.app.client.chat_postMessage(
-                channel=channel_id,
-                thread_ts=thread_ts,
-                text="❌ Error processing request",
-                blocks=[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": f"*Error:* {str(e)}\n\nPlease try again or contact support."
-                        }
-                    }
-                ]
-            )
-            
-        except SlackApiError as e:
-            logger.error(f"Slack API error: {e}")
-        except Exception as e:
-            logger.error(f"Error processing test request: {e}")
-
-    async def _generate_test_case(self, user_request: str) -> Optional[Dict]:
-        """Generate a test case using the TestPilot AI backend."""
-        try:
-            import httpx
-            import json
-            
-            # Prepare the request payload
-            payload = {
-                "spec": user_request,
-                "framework": "playwright",
-                "language": "javascript",
-                "title": f"Slack Test: {user_request[:50]}...",
-                "description": f"Test generated from Slack request: {user_request}"
-            }
-            
-            # Call the test generation API
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "http://localhost:8000/api/v1/generate",
-                    json=payload,
-                    headers={"Content-Type": "application/json"},
-                    timeout=60.0
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"Generated test case: {result}")
-                    return result
-                else:
-                    logger.error(f"Failed to generate test case: {response.status_code} - {response.text}")
-                    return None
-                    
-        except Exception as e:
-            logger.error(f"Error generating test case: {e}")
-            return None
-
-    async def _execute_test(self, test_case_id: int) -> Optional[Dict]:
-        """Execute a test case using the TestPilot AI backend."""
-        try:
-            import httpx
-            
-            # Prepare the execution request
-            payload = {
-                "test_case_id": test_case_id,
-                "browser": "chromium",
-                "headless": True,
-                "timeout": 30000,
-                "retry_count": 3,
-                "retry_delay": 1000,
-                "screenshot_on_failure": True,
-                "capture_logs": True
-            }
-            
-            # Call the test execution API
-            async with httpx.AsyncClient() as client:
-                response = await client.post(
-                    "http://localhost:8000/api/v1/execute",
-                    json=payload,
-                    headers={"Content-Type": "application/json"},
-                    timeout=60.0
-                )
-                
-                if response.status_code == 200:
-                    result = response.json()
-                    logger.info(f"Executed test: {result}")
-                    return result
-                else:
-                    logger.error(f"Failed to execute test: {response.status_code} - {response.text}")
-                    return None
-                    
-        except Exception as e:
-            logger.error(f"Error executing test: {e}")
-            return None
-
     async def _send_test_results(self, channel_id: str, thread_ts: str, user_request: str, test_case: Dict, execution_result: Dict):
         """Send comprehensive test results to Slack."""
         try:
             # Get detailed execution results
             execution_id = execution_result.get("execution_id")
             if execution_id:
-                detailed_results = await self._get_execution_results(execution_id)
+                backend_client = await get_backend_client()
+                detailed_results = await backend_client.get_execution_results(execution_id)
             else:
                 detailed_results = None
             
@@ -518,27 +603,6 @@ class SlackService:
                     }
                 ]
             )
-
-    async def _get_execution_results(self, execution_id: int) -> Optional[Dict]:
-        """Get detailed execution results from the TestPilot AI backend."""
-        try:
-            import httpx
-            
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    f"http://localhost:8000/api/v1/results/{execution_id}",
-                    timeout=30.0
-                )
-                
-                if response.status_code == 200:
-                    return response.json()
-                else:
-                    logger.error(f"Failed to get execution results: {response.status_code}")
-                    return None
-                    
-        except Exception as e:
-            logger.error(f"Error getting execution results: {e}")
-            return None
     
     def is_available(self) -> bool:
         """Check if Slack integration is available."""

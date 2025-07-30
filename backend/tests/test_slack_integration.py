@@ -3,9 +3,11 @@ Tests for Slack integration functionality.
 """
 
 import pytest
+import httpx
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
 from app.services.slack_service import SlackService
+from app.services.backend_client import BackendAPIClient
 from app.config import settings
 
 
@@ -180,4 +182,144 @@ class TestSlackAPI:
 def client():
     """Create a test client."""
     from main import app
-    return TestClient(app) 
+    return TestClient(app)
+
+
+class TestSlackServiceBackendIntegration:
+    """Test cases for Slack service backend integration."""
+    
+    @pytest.mark.asyncio
+    async def test_process_test_request_async_success(self):
+        """Test successful async test request processing."""
+        with patch('app.services.slack_service.get_backend_client') as mock_get_client:
+            # Mock backend client
+            mock_backend_client = AsyncMock()
+            mock_backend_client.generate_test_case.return_value = {
+                "test_case_id": 123,
+                "code": "test code",
+                "framework": "playwright",
+                "language": "javascript"
+            }
+            mock_backend_client.execute_test.return_value = {
+                "execution_id": 456,
+                "status": "completed",
+                "result": "pass"
+            }
+            mock_get_client.return_value = mock_backend_client
+            
+            # Mock Slack app client
+            mock_app_client = AsyncMock()
+            
+            # Create service with mocked app
+            service = SlackService()
+            service.app = Mock()
+            service.app.client = mock_app_client
+            
+            # Test async processing
+            await service._process_test_request_async(
+                "test user request",
+                "user123",
+                "channel123",
+                "thread123"
+            )
+            
+            # Verify backend calls were made
+            mock_backend_client.generate_test_case.assert_called_once()
+            mock_backend_client.execute_test.assert_called_once()
+            
+            # Verify Slack messages were sent
+            assert mock_app_client.chat_postMessage.call_count >= 3  # Initial, success, results
+    
+    @pytest.mark.asyncio
+    async def test_process_test_request_async_http_error(self):
+        """Test async test request processing with HTTP error."""
+        with patch('app.services.slack_service.get_backend_client') as mock_get_client:
+            # Mock backend client that raises HTTP error
+            mock_backend_client = AsyncMock()
+            mock_backend_client.generate_test_case.side_effect = httpx.HTTPStatusError(
+                "Invalid request format. Please check your input and try again.",
+                request=Mock(),
+                response=Mock(status_code=400, text="Bad Request")
+            )
+            mock_get_client.return_value = mock_backend_client
+            
+            # Mock Slack app client
+            mock_app_client = AsyncMock()
+            
+            # Create service with mocked app
+            service = SlackService()
+            service.app = Mock()
+            service.app.client = mock_app_client
+            
+            # Test async processing
+            await service._process_test_request_async(
+                "test user request",
+                "user123",
+                "channel123",
+                "thread123"
+            )
+            
+            # Verify error message was sent to Slack
+            mock_app_client.chat_postMessage.assert_called()
+            call_args = mock_app_client.chat_postMessage.call_args
+            assert "Invalid request format" in str(call_args)
+    
+    @pytest.mark.asyncio
+    async def test_process_test_request_async_timeout_error(self):
+        """Test async test request processing with timeout error."""
+        with patch('app.services.slack_service.get_backend_client') as mock_get_client:
+            # Mock backend client that raises timeout error
+            mock_backend_client = AsyncMock()
+            mock_backend_client.generate_test_case.side_effect = httpx.TimeoutException("Request timeout")
+            mock_get_client.return_value = mock_backend_client
+            
+            # Mock Slack app client
+            mock_app_client = AsyncMock()
+            
+            # Create service with mocked app
+            service = SlackService()
+            service.app = Mock()
+            service.app.client = mock_app_client
+            
+            # Test async processing
+            await service._process_test_request_async(
+                "test user request",
+                "user123",
+                "channel123",
+                "thread123"
+            )
+            
+            # Verify timeout error message was sent to Slack
+            mock_app_client.chat_postMessage.assert_called()
+            call_args = mock_app_client.chat_postMessage.call_args
+            assert "Request Timeout" in str(call_args)
+    
+    @pytest.mark.asyncio
+    async def test_process_test_request_async_network_error(self):
+        """Test async test request processing with network error."""
+        with patch('app.services.slack_service.get_backend_client') as mock_get_client:
+            # Mock backend client that raises network error
+            mock_backend_client = AsyncMock()
+            mock_backend_client.generate_test_case.side_effect = httpx.RequestError("Connection failed")
+            mock_get_client.return_value = mock_backend_client
+            
+            # Mock Slack app client
+            mock_app_client = AsyncMock()
+            
+            # Create service with mocked app
+            service = SlackService()
+            service.app = Mock()
+            service.app.client = mock_app_client
+            
+            # Test async processing
+            await service._process_test_request_async(
+                "test user request",
+                "user123",
+                "channel123",
+                "thread123"
+            )
+            
+            # Verify network error message was sent to Slack
+            mock_app_client.chat_postMessage.assert_called()
+            call_args = mock_app_client.chat_postMessage.call_args
+            assert "Network Error" in str(call_args) 

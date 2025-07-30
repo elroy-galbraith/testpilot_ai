@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     slack_bot_token: Optional[str] = None
     slack_app_token: Optional[str] = None
     
+    # Backend API Configuration (for Slack service integration)
+    testpilot_api_url: str = "http://localhost:8000"
+    testpilot_api_key: Optional[str] = None
+    testpilot_api_timeout: int = 60
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
