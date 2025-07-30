@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "your-secret-key-change-in-production"
     jwt_access_token_expire_minutes: int = 30
     
+    # Slack Configuration
+    slack_signing_secret: Optional[str] = None
+    slack_bot_token: Optional[str] = None
+    slack_app_token: Optional[str] = None
+    
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

@@ -7,6 +7,7 @@ import logging
 from app.config import settings
 from app.services.agent_service import AgentService
 from app.services.storage_service import StorageService
+from app.services.slack_service import slack_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health", tags=["health"])
@@ -43,6 +44,9 @@ async def detailed_health_check() -> Dict[str, Any]:
     # Check storage service
     storage_health = storage_service.health_check()
     
+    # Check Slack integration
+    slack_available = slack_service.is_available()
+    
     # Determine overall status
     issues = []
     if not llm_health.get("test_query", False):
@@ -50,6 +54,9 @@ async def detailed_health_check() -> Dict[str, Any]:
     
     if not storage_health.get("available", False):
         issues.append("Cloud Storage not available")
+    
+    if not slack_available:
+        issues.append("Slack integration not configured")
     
     overall_status = "ok" if not issues else "degraded"
     
@@ -87,6 +94,11 @@ async def detailed_health_check() -> Dict[str, Any]:
                 "project_id": settings.gcp_project_id,
                 "region": settings.gcp_region,
                 "cloud_storage": storage_health
+            },
+            "slack": {
+                "available": slack_available,
+                "configured": bool(settings.slack_signing_secret and settings.slack_bot_token),
+                "handler_available": slack_service.get_handler() is not None
             }
         },
         "timestamp": "2025-07-29T13:50:00Z",
@@ -121,6 +133,9 @@ async def readiness_check() -> Dict[str, Any]:
     elif not storage_health.get("available", False):
         ready = False
         reason = "Cloud Storage not available"
+    elif not slack_available:
+        ready = False
+        reason = "Slack integration not configured"
     
     return {
         "ready": ready,

@@ -73,6 +73,7 @@ htmlcov/
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+infra/gcp/terraform/terraform-admin-key.json
 
 # AWS
 .aws/
@@ -103,5 +104,5 @@ infra/.terraform/
 ehthumbs.db
 Thumbs.db 
 
-# Terraform
-infra/gcp/terraform/terraform-admin-key.json
+# Venv
+*venv*

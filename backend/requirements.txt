@@ -45,5 +45,9 @@ PyJWT==2.8.0
 python-multipart==0.0.6
 click==8.1.7
 
+# Slack Integration
+slack-bolt
+slack-sdk==3.26.1
+
 # Playwright for test execution
 playwright==1.40.0 
