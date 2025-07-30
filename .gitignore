@@ -106,3 +106,6 @@ Thumbs.db
 
 # Venv
 *venv*
+
+# db
+testpilot.db
