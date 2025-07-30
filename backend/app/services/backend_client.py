@@ -63,12 +63,12 @@ class BackendAPIClient:
     
     def __init__(self):
         """Initialize the backend API client."""
+        # Validate configuration first
+        self._validate_config()
+        
         self.base_url = settings.testpilot_api_url.rstrip('/')
         self.api_key = settings.testpilot_api_key
         self.timeout = settings.testpilot_api_timeout
-        
-        # Validate configuration
-        self._validate_config()
         
         # Create HTTP client
         self.client = httpx.AsyncClient(
@@ -80,10 +80,10 @@ class BackendAPIClient:
     
     def _validate_config(self):
         """Validate that required configuration is present."""
-        if not self.base_url:
+        if not settings.testpilot_api_url:
             raise ValueError("TESTPILOT_API_URL is required")
         
-        if not self.api_key:
+        if not settings.testpilot_api_key:
             logger.warning("TESTPILOT_API_KEY not provided - API calls may fail")
     
     def _get_default_headers(self) -> Dict[str, str]:
